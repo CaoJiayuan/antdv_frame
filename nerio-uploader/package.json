@@ -1,0 +1,16 @@
+{
+    "name": "nerio-uploader",
+    "version": "1.0.9",
+    "description": "uploader",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo 'test'"
+    },
+    "author": "NerioRith",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^0.18.0",
+        "nerio-js-utils": "^1.0.10"
+    },
+    "types": "index.d.ts"
+}

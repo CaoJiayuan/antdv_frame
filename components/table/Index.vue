@@ -1,0 +1,498 @@
+<script setup>
+import { Table, Card, Button, Popconfirm, Divider, Form, Popover, Checkbox, Switch } from 'ant-design-vue'
+import { usePagination } from '../../request/pagination.js'
+import { computed, ref, h, useSlots, watch, useAttrs, capitalize, onUnmounted, onMounted } from 'vue'
+import { ReloadOutlined, SettingOutlined } from '@ant-design/icons-vue';
+import md5 from 'blueimp-md5';
+import _ from 'lodash'
+import { functions } from 'nerio-js-utils'
+import { useRoute } from 'vue-router';
+import Filters from './filters.vue'
+
+const { useAsFunction } = functions
+
+const props = defineProps({
+  apiUrl: {
+    type: String,
+    required: true
+  },
+  columns: {
+    type: Array,
+    required: true
+  },
+  actions: Array,
+  requestMethod: {
+    type: String,
+    default: () => "POST"
+  },
+  pageSize: {
+    type: Number,
+    default: () => 15
+  },
+  title: String,
+  buttons: Array,
+  actionWidth: {
+    type: [String, Number],
+    default: () => 200
+  },
+  refreshable: {
+    type: Boolean,
+    default: () => true
+  },
+  searchData: {
+    type: Object,
+    default: () => ({})
+  },
+  dettached: {
+    type: Boolean,
+    default: () => true
+  },
+  autoload: {
+    type: Boolean,
+    default: () => true
+  },
+  sort: {
+    type: Object,
+    default: () => ({})
+  },
+  modelValue: {
+    type: [Object, Array],
+  },
+  pk: {
+    type: String,
+    default: 'id'
+  },
+  initFilters: {
+    type: [Object, Function],
+    default: () => ({})
+  },
+  scroll: {
+    type: Object
+  },
+  clearFilter: {
+    type: Boolean
+  },
+  autoRefresh: {
+    type: Boolean
+  },
+  refreshInterval: {
+    type: Number
+  },
+  noCache: {
+    type: Boolean
+  },
+  cacheKey: {
+    type: String
+  }
+})
+
+const emit = defineEmits(['loaded', 'update:modelValue', 'resetFilter'])
+const filters = ref(Object.assign({}, useAsFunction(props.initFilters)()))
+const filterFormRef = ref()
+const columnsState = ref(props.columns.map(col => {
+  col.show = !col.hidden
+  return col
+}))
+
+const sortState = ref(Object.assign({}, useAsFunction(props.sort)()))
+
+const autoRefreshRef = ref(props.autoRefresh)
+
+const refreshInterval = props.refreshInterval || 3000
+
+
+const route = useRoute()
+
+const pageKey = computed(() => {
+  if (props.cacheKey) {
+    return md5(route.fullPath + props.cacheKey)
+  }
+
+
+  return md5(route.fullPath + props.apiUrl + JSON.stringify(props.searchData))
+})
+
+const DataKey = "_TABLE_DATA_CACHE_"
+
+
+function cacheTableData(data) {
+  if (props.noCache) {
+    return {}
+  }
+  const cacheKey = DataKey + pageKey.value
+
+  const cache = JSON.parse(localStorage.getItem(cacheKey)) || {}
+
+  if (data != undefined) {
+    localStorage.setItem(cacheKey, JSON.stringify(Object.assign({}, cache, data)))
+  }
+
+
+  return cache
+}
+
+
+const { loading, meta, data: dataSource, paginate, withoutPage, latency } = usePagination(emit)
+
+const refresh = (data = {}) => {
+  const cache = cacheTableData()
+  //console.log(filters.value, cache.filters)
+  filters.value = Object.assign({}, filters.value, cache.filters)
+  data.extra = Object.assign({}, data.extra, props.searchData)
+  data.sort = data.sort || cache.sort || sortState.value || props.sort
+  data.filters = data.filters || filters.value
+  data.perPage = data.perPage || cache.perPage || props.pageSize
+  data.page = data.page || cache.page
+  //console.log('=======', filters.value, data)
+  sortState.value = data.sort
+  cacheTableData({
+    perPage: data.perPage,
+    sort: data.sort,
+    page: data.page
+  })
+
+  return paginate(props.apiUrl, data)
+}
+props.autoload && refresh()
+
+watch(() => props.searchData, (now, _old) => {
+  //console.log(now == _old, _.eq(now, _old), now, _old)
+
+  refresh()
+})
+
+const pagination = computed(() => {
+  if (withoutPage.value) {
+    return false
+  }
+
+  return {
+    total: meta.value.total,
+    current: meta.value.page,
+    pageSize: meta.value.per_page,
+    defaultPageSize: props.pageSize,
+    position: ['bottomRight'],
+    pageSizeOptions: ['5', '10', '15', '20', '30', '50', '100'],
+    showTotal: total => `${total} 条数据（查询时间：${latency.value}ms）`,
+    showSizeChanger: true
+  }
+})
+
+const rowSelection = computed(() => {
+  if (props.modelValue != undefined) {
+    const isArr = Array.isArray(props.modelValue)
+    const srowKeys = []
+    const srows = isArr ? props.modelValue : [props.modelValue]
+    const pv = pagination.value
+    for (let i in srows) {
+      let idx = dataSource.value.findIndex(row => row[props.pk] == srows[i][props.pk])
+      if (idx != -1) {
+        if (withoutPage.value) {
+          srowKeys.push(idx)
+        } else {
+          srowKeys.push(idx + (pv.current - 1) * pv.pageSize)
+        }
+      }
+    }
+    return {
+      type: isArr ? 'checkbox' : 'radio',
+      selectedRowKeys: srowKeys,
+      onChange: (selectedRowKeys, selectedRows) => {
+        if (isArr) {
+          emit('update:modelValue', selectedRows)
+        } else {
+          emit('update:modelValue', selectedRows[0])
+        }
+      }
+    }
+  }
+
+  return null
+})
+
+const attrs = useAttrs()
+
+function callAction(action, ...args) {
+  if (typeof action === 'function') {
+    action.apply(null, args)
+  } else if (typeof action === 'string') {
+    const listener = attrs[`on${capitalize(action)}`]
+    if (listener) {
+      listener.apply(null, args)
+    } else {
+      emit(action, ...args)
+    }
+    // const res = emit(action, ...args)
+    //console.log(res)
+  } else {
+    console.error(`invalid action ${action}`)
+  }
+}
+
+const formatButtons = computed(() => {
+  const buttons = props.buttons || []
+  return buttons.map(btn => {
+    return Object.assign({
+      type: 'primary',
+      size: 'middle',
+      onClick: e => {
+        if (btn.action) {
+          callAction(btn.action)
+        }
+      },
+    }, btn, {
+      disabled: () => btn.disabled ? btn.disabled() : false
+    })
+  })
+})
+
+const formatColumns = computed(() => {
+  const actions = props.actions || []
+  const columns = columnsState.value.filter(col => col.show)
+  if (actions.length > 0) {
+    columns.push({
+      key: 'action',
+      actions: actions.map(action => {
+        return Object.assign({
+          onClick: (record) => callAction(action.action, record, refresh),
+          size: "small",
+          type: 'link'
+        }, action, {
+          disabled: (record) => action.disabled ? action.disabled(record) : false
+        })
+      }),
+      fixed: 'right',
+      title: '操作',
+      width: props.actionWidth
+    })
+  }
+
+  return columns.map(column => {
+    const render = column.customRender
+    if (render) {
+      column.customRender = (data) => {
+        return render(data, callAction)
+      }
+    }
+
+    let sortKey = getSortKey(column)
+
+    if (sortState.value[sortKey]) {
+      column.sortOrder = sortState.value[sortKey] == 'desc' ? 'descend' : 'ascend'
+    } else {
+      column.sortOrder = undefined
+    }
+
+    return column
+  })
+})
+
+function getSortKey(column) {
+  //console.log(column)
+  let sortKey = Array.isArray(column.dataIndex) ? column.dataIndex.join('.') : column.dataIndex
+
+  return sortKey
+}
+
+const handleTableChange = (data, filters, sorter) => {
+  let sort = {}
+
+  const col = columnsState.value.find(item => item.dataIndex == sorter.field)
+
+  if (col) {
+    delete (sort[sorter.field])
+    const key = getSortKey(col)
+    delete (sort[key])
+    if (sorter.order != null) {
+      sort[key] = sorter.order == "ascend" ? 'asc' : 'desc'
+    }
+  }
+
+  //console.log(sort)
+  sortState.value = sort
+
+  //console.log(sorter, col, sort)
+  refresh({
+    perPage: data.pageSize,
+    page: data.current,
+    sort
+  })
+}
+
+const applyFilters = () => {
+  cacheTableData({ filters: filters.value })
+  refresh({ filters: filters.value })
+}
+
+const resetFilters = () => {
+  filters.value = props.clearFilter ? {} : Object.assign({}, useAsFunction(props.initFilters)())
+  emit('resetFilter', filters.value)
+  applyFilters()
+}
+
+
+watch(() => props.apiUrl, (nowVal) => {
+  refresh()
+})
+
+defineExpose({ refresh, filters, resetFilters })
+const slots = useSlots()
+
+let refreshIntervalV
+
+
+function setAutoRefresh() {
+  if (autoRefreshRef.value) {
+    if (!refreshIntervalV) {
+      refreshIntervalV = setInterval(() => {
+        refresh()
+      }, refreshInterval)
+    }
+  } else {
+    refreshIntervalV && clearInterval(refreshIntervalV)
+  }
+}
+
+watch(() => autoRefreshRef.value, (nowVal) => {
+  setAutoRefresh()
+})
+
+onUnmounted(() => {
+  refreshIntervalV && clearInterval(refreshIntervalV)
+})
+
+onMounted(() => {
+  setAutoRefresh()
+})
+
+</script>
+
+<template>
+  <div>
+    <Card v-if="slots.filters && dettached" style="margin-bottom: 12px;" class="filter-card">
+      <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters">
+        <template #filters="{ filters }">
+          <slot name="filters" :filters="filters"></slot>
+        </template>
+      </Filters>
+    </Card>
+    <Card :title="title" :bordered="false" class="table-card">
+
+      <template #extra>
+        <slot name="extra"></slot>
+      </template>
+      <template v-if="slots.filters && !dettached">
+        <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters">
+          <template #filters="{ filters }">
+            <slot name="filters" :filters="filters"></slot>
+          </template>
+        </Filters>
+        <Divider />
+      </template>
+
+      <div class="table-btns">
+        <div>
+          <Button :type="btn.type" :key="idx" v-for="(btn, idx) in formatButtons" @click="btn.onClick" :icon="btn.icon"
+            :size="btn.size" :disabled="btn.disabled()">{{ btn.title }}</Button>
+        </div>
+        <div class="table-tools">
+          <div v-if="refreshable">
+            <ReloadOutlined @click="refresh" />
+          </div>
+          <div>
+            <Popover placement="bottomRight" trigger="click">
+              <template #content>
+                <div class="table-columns-setting">
+                  <div v-for="col in columnsState" :key="col.dataIndex">
+                    <Checkbox v-model:checked="col.show"></Checkbox> {{ col.title }}
+                  </div>
+                </div>
+                <div class="flex">
+                  <span>自动刷新：</span>
+                  <Switch v-model:checked="autoRefreshRef"></Switch>
+                </div>
+              </template>
+              <template #title>
+                <span>列显示设置</span>
+              </template>
+              <SettingOutlined></SettingOutlined>
+            </Popover>
+          </div>
+          <slot name="tools"></slot>
+        </div>
+      </div>
+
+      <Table @change="handleTableChange" :expand-column-width="100" :columns="formatColumns" :data-source="dataSource"
+        :loading="loading" :pagination="pagination" :row-selection="rowSelection" :scroll="scroll" v-bind="attrs"
+        bordered size="middle">
+
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'action'">
+            <template :key="idx" v-for="(action, idx) in column.actions">
+              <Popconfirm v-if="action.confirm && !action.disabled(record)" @confirm="action.onClick(record)"
+                :title="action.confirm(record)">
+                <Button :type="action.type" :icon="action.icon" :size="action.size" :danger="action.danger"
+                  :disabled="action.disabled(record)">{{ action.title }}</Button>
+              </Popconfirm>
+              <Button v-else :type="action.type" @click="action.onClick(record)" :icon="action.icon" :size="action.size"
+                :danger="action.danger" :disabled="action.disabled(record)">{{ action.title }}</Button>
+            </template>
+          </template>
+          <template v-for="col in formatColumns">
+            <template v-if="column.dataIndex === col.dataIndex && col.slot && slots[col.slot]">
+              <slot :name="col.slot" :column="column" :record="record"></slot>
+            </template>
+          </template>
+        </template>
+        <template #expandedRowRender="{ record }" v-if="slots.expanded">
+          <slot name="expanded" :record="record"></slot>
+        </template>
+
+        <template #expandColumnTitle v-if="slots.expanded">
+          <span>展开</span>
+        </template>
+      </Table>
+    </Card>
+    <slot></slot>
+  </div>
+</template>
+<style lang="scss" scoped>
+.table-btns {
+  padding: 10px 0;
+  display: flex;
+  justify-content: space-between;
+
+  >div {
+    button+button {
+      margin-left: 6px;
+    }
+
+    display: inline-flex;
+  }
+
+
+}
+
+.table-columns-setting {
+  max-height: 450px;
+  overflow-y: auto;
+  min-width: 300px;
+
+  >div {
+    padding: 2px 0;
+  }
+}
+</style>
+
+<style lang="scss">
+.table-tools {
+  display: flex;
+  justify-items: center;
+  align-items: center;
+
+  >div {
+    margin-left: 12px;
+    font-size: 18px;
+  }
+}
+</style>

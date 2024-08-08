@@ -1,0 +1,22 @@
+{
+  "name": "nerio-antdv-frame",
+  "version": "1.0.0",
+  "description": "antdv web framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "NerioRith",
+  "license": "MIT",
+  "dependencies": {
+    "@vueup/vue-quill": "^1.2.0",
+    "ant-design-vue": "^4.0.3",
+    "nerio-js-utils": "^1.0.11",
+    "pinia": "^2.1.6",
+    "quill-blot-formatter": "^1.0.5",
+    "quill-image-uploader": "^1.3.0"
+  },
+  "devDependencies": {
+    "sass": "^1.69.0"
+  }
+}

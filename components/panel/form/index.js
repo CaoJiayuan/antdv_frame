@@ -1,0 +1,92 @@
+
+import { computed, h, ref, defineProps, defineEmits } from "vue"
+import { functions } from 'nerio-js-utils'
+const { useAsFunction } = functions
+
+import { usePanelStore } from "../index.js"
+
+const coms = import.meta.globEager("./components/*.vue")
+
+
+export function withDefaults() {
+  const ps = usePanelStore()
+
+  Object.keys(coms).forEach(key => {
+    const name = key.replace(/^\.\//, '').replace(/\.vue$/, '').replace('components/', '')
+    ps.registerFormComponent(name, (post, field, props) => {
+      // console.log(props)
+      return h(coms[key].default, Object.assign({}, props, {
+        modelValue: post[field],
+        'onUpdate:modelValue': v => post[field] = v,
+      }))
+    })
+  })
+}
+
+export function renderFormComponent(key, post, field, props) {
+
+  const ps = usePanelStore()
+
+  const fn = ps.getFormComponent(key)
+  if (fn) {
+    return fn(post, field, props)
+  }
+
+  return h('span', {}, '未注册组件：' + key)
+}
+
+
+export function renderFilterComponent(key, post, field, props) {
+  const ps = usePanelStore()
+
+  const fn = ps.getFilterComponent(key)
+  if (props.op) {
+    field = `${field},${props.op}`
+  }
+
+  if (fn) {
+
+    return fn(post, props, field, props)
+  }
+
+  return renderFormComponent(key, post, field, props)
+}
+
+
+export function useForm(name, defaultPost = {}) {
+
+  const modalOpen = ref(false)
+  const post = ref({})
+
+  const tableRef = ref()
+  const modalRef = ref()
+
+  let cancelModal = () => { }
+
+  const openModal = () => {
+    post.value = useAsFunction(defaultPost)()
+    if (modalRef.value) {
+      cancelModal = modalRef.value.openModal()
+    }
+  }
+
+  const modalTitle = computed(() => {
+    return `${post.value.id ? '修改' : '新增'}${name}`
+  })
+
+  const refreshTable = () => {
+    tableRef.value && tableRef.value.refresh()
+  }
+
+  function openEdit(record) {
+    openModal()
+    post.value = Object.assign({}, record)
+  }
+
+  const submitted = () => {
+    cancelModal()
+    refreshTable()
+  }
+
+  return {modalOpen, modalRef, openModal, openEdit, submitted, modalTitle, post, tableRef}
+}
