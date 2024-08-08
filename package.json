@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "@vueup/vue-quill": "^1.2.0",
-    "ant-design-vue": "^4.0.3",
+    "ant-design-vue": "^4.2.3",
     "nerio-js-utils": "^1.0.11",
     "pinia": "^2.1.6",
     "quill-blot-formatter": "^1.0.5",
