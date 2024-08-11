@@ -1,7 +1,8 @@
 <script setup>
 import { Select, SelectOption } from 'ant-design-vue'
 import { computed, onMounted, ref, useSlots, watch } from 'vue'
-import request from '../../request'
+import {getRequest} from '../../request'
+const request = getRequest()
 
 const props = defineProps({
   modelValue: [Array, String, Number],

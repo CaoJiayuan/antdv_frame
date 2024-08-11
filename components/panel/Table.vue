@@ -1,6 +1,8 @@
 <script setup>
 import Table from '../table/Index.vue'
-import request from '../../request'
+import {getRequest} from '../../request'
+const request = getRequest()
+
 import { FormItem, Col, Row, message, Switch, Card } from 'ant-design-vue'
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import ModalForm from '../form/ModalForm.vue'

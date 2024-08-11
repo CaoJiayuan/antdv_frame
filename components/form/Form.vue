@@ -1,7 +1,8 @@
 <script setup>
 import { Form, Button } from 'ant-design-vue'
 import { computed, ref } from 'vue'
-import request from '../../request'
+import {getRequest} from '../../request'
+const request = getRequest()
 
 const emit = defineEmits(['update:open', 'submitted'])
 
