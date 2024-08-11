@@ -89,7 +89,7 @@ const props = defineProps({
 const emit = defineEmits(['loaded', 'update:modelValue', 'resetFilter'])
 const filters = ref(Object.assign({}, useAsFunction(props.initFilters)()))
 const filterFormRef = ref()
-const columnsState = ref(props.columns.map(col => {
+const columnsState = computed(() => props.columns.map(col => {
   col.show = !col.hidden
   return col
 }))
@@ -427,7 +427,7 @@ onMounted(() => {
         bordered size="middle">
 
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'action'">
+          <template v-if="column && column.key === 'action'">
             <template :key="idx" v-for="(action, idx) in column.actions">
               <Popconfirm v-if="action.confirm && !action.disabled(record)" @confirm="action.onClick(record)"
                 :title="action.confirm(record)">

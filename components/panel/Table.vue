@@ -1,6 +1,6 @@
 <script setup>
 import Table from '../table/Index.vue'
-import {getRequest} from '../../request'
+import { getRequest } from '../../request'
 const request = getRequest()
 
 import { FormItem, Col, Row, message, Switch, Card } from 'ant-design-vue'
@@ -13,8 +13,10 @@ import { functions } from 'nerio-js-utils'
 import { useResolver } from './resolver'
 const { useAsFunction } = functions
 import _ from 'lodash'
+import { usePanelAdapterStore } from './props.js'
 import { useForm, renderFormComponent, renderFilterComponent } from './form'
 import { usePanelStore } from "./index.js"
+
 
 const { hasFormComponent, hasFilterComponent, getIndex, hasIndex } = usePanelStore()
 
@@ -33,6 +35,10 @@ const props = defineProps({
   postData: {
     type: Object,
   },
+  searchData: {
+    type: Object,
+    default: () => ({})
+  },
   addDisabled: {
     type: Boolean,
   },
@@ -41,10 +47,23 @@ const props = defineProps({
     default: () => []
   }
 })
+const indexFn = getIndex(props.index)
+
+// const indexDef = ref(indexFn() || {})
 
 const indexDef = computed(() => {
-  const indexFn = getIndex(props.index)
-  return indexFn ? indexFn() : {}
+  return indexFn() || {}
+})
+
+const propsState = ref(indexDef.value?.props || [])
+
+const config = computed(() => {
+  const adapter = usePanelAdapterStore().getAdapter(indexDef.value?.adapter || 'default')
+
+  return {
+    query: adapter.query(indexDef.value, props),
+    save: adapter.save(indexDef.value),
+  }
 })
 
 const toggleUrl = computed(() => {
@@ -131,25 +150,32 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits([])
+const emit = defineEmits(['loaded'])
+
+function onLoaded(res, req) {
+  emit('loaded', res, req)
+  const conf = config.value
+  conf.query?.after && conf.query?.after(res, propsState)
+}
 
 
 const columns = computed(() => {
-  return indexDef.value?.props.filter(item => {
+  return propsState.value.filter(item => {
     return !item.exclude
   }).map(column => {
     const resolver = column.resolver || 'emptyn'
-    if (column.customRender) {
-      const render = column.customRender
+    const col = _.clone(column)
 
-      column.customRender = (data) => {
+    if (col.customRender) {
+      const render = column.customRender
+      col.customRender = (data) => {
         return render(data, emit)
       }
     } else {
       if (column.dataType == 'datetime' && !column.resolver) {
-        column.customRender = ({ text }) => fmtDatetime(text)
+        col.customRender = ({ text }) => fmtDatetime(text)
       } else if (column.dataType == 'toggle') {
-        column.customRender = ({ text, record }) => {
+        col.customRender = ({ text, record }) => {
           return h(Switch, {
             checked: text,
             onChange: (checked) => {
@@ -161,28 +187,23 @@ const columns = computed(() => {
           })
         }
       } else if (column.dataType == 'map') {
-        column.customRender = ({ text, record }) => {
+        col.customRender = ({ text, record }) => {
 
           return h('span', {}, mapsCache.value[column.mapIndex || column.dataIndex]?.[text] || text)
         }
       } else {
-        column.customRender = ({ text, record }) => {
+        col.customRender = ({ text, record }) => {
           return callfn(record, text, resolver, column.dataIndex)
         }
       }
     }
-
-    return column
+    return col
   })
-})
-
-const queries = computed(() => {
-  return indexDef.value.searchData
 })
 
 // 过滤列
 const filterCols = computed(() => {
-  return indexDef.value?.props.filter(item => item.filter || item.filterRender).map(item => {
+  return propsState.value.filter(item => item.filter || item.filterRender).map(item => {
 
     item.filterName = item.filterName || item.dataIndex
 
@@ -268,10 +289,6 @@ const initFilters = computed(() => {
     }
     return res
   }, props.filters || {})
-})
-
-const apiUrl = computed(() => {
-  return indexDef.value.apiUrl
 })
 
 // 按钮
@@ -360,17 +377,18 @@ const slots = useSlots()
   <Card v-if="!hasIndex(index)">
     未注册的面板索引：{{ index }}
   </Card>
-  <Table v-else :action-width="indexDef.actionWidth" :init-filters="initFilters" :sort="indexDef.sort" :buttons="buttons"
-    ref="tableRef" :columns="columns" :actions="actions" :search-data="queries" :api-url="apiUrl">
+  <Table v-else :action-width="indexDef.actionWidth" :init-filters="initFilters" :sort="indexDef.sort"
+    :buttons="buttons" ref="tableRef" :columns="columns" :actions="actions" :search-data="config.query.data"
+    :api-url="config.query.url" @loaded="onLoaded">
     <template #[item]="data" v-for="item in colSlots" :key="item">
       <slot :name="item" v-bind="data"></slot>
     </template>
     <template #[slot]="slotData" v-for="(fn, slot) in slots" :key="slot">
       <slot :name="slot" v-bind="slotData"></slot>
     </template>
-    <ModalForm v-if="indexDef.post" ref="modalRef" :method="indexDef.post?.method || 'post'" @submitted="submitted"
-      :width="indexDef.post?.modalWidth || '500px'" :title="modalTitle" v-model:open="modalOpen" :model="post"
-      :api-url="indexDef.post?.url">
+    <ModalForm v-if="config.save.url" ref="modalRef" :method="config.save?.method || 'post'" @submitted="submitted"
+      :width="config.save.modalWidth || '500px'" :title="modalTitle" v-model:open="modalOpen" :model="post"
+      :api-url="config.save.url" :data-resolver="config.save.dataResolver">
       <template v-for="col in formCols" :key="col.dataIndex">
 
         <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"

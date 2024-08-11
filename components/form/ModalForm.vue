@@ -31,6 +31,12 @@ const props = defineProps({
   method: {
     type: String,
     default: () => "post"
+  },
+  dataResolver: {
+    type: Function,
+    default: data => {
+      return data
+    }
   }
 })
 
@@ -47,7 +53,6 @@ const formState = computed(() => {
   return props.model
 })
 
-
 const formRef = ref()
 const loading = ref(false)
 
@@ -59,7 +64,7 @@ const onSubmit = () => {
       return request({
         url: props.apiUrl,
         method: props.method,
-        data: formState.value
+        data: props.dataResolver(formState.value)
       }).then(res => {
         loading.value = false
         message.info(props.successMsg)

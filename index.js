@@ -1,5 +1,6 @@
 import * as panelForm from './components/panel/form';
 import { usePanelStore } from "./components/panel";
+import { usePanelAdapterStore } from "./components/panel/props";
 import { useRequest } from './request';
 
 import PanelTable from './components/panel/Table.vue'
@@ -18,6 +19,7 @@ export function withDefaults() {
 export {
   useRequest,
   usePanelStore,
+  usePanelAdapterStore,
   PanelTable,
   Table,
   UploadFile,
