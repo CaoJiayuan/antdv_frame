@@ -5,7 +5,6 @@ import { FormItem, Col, Row, message, Switch, Card } from 'ant-design-vue'
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import ModalForm from '../form/ModalForm.vue'
 import { computed, h, onMounted, ref, useSlots } from 'vue'
-import JsonViewer from 'vue-json-viewer'
 import { fmtDatetime } from '../../utils/date.js'
 import { replaceParams } from '../../utils/functions.js'
 import { functions } from 'nerio-js-utils'
@@ -401,11 +400,6 @@ const slots = useSlots()
       </FormItem>
       </Col>
     </template>
-
-    <template #expanded="{ record }" v-if="expandable">
-      <json-viewer :value="record" :expand-depth="5" copyable sort></json-viewer>
-    </template>
-
   </Table>
 </template>
 
