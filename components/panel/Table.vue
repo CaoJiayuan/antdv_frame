@@ -77,7 +77,7 @@ const toggleUrl = computed(() => {
 })
 
 const { modalOpen, modalRef, openModal, openEdit, submitted, modalTitle, post, tableRef } = useForm(indexDef.value?.post?.name, () => {
-  return Object.assign({}, indexDef.value?.post?.default, Object.assign({}, props.postData, config.value.save.default))
+  return Object.assign({}, indexDef.value?.post?.default, Object.assign({}, props.postData, useAsFunction(config.value.save.default)()))
 })
 
 const mapsCache = ref({})
