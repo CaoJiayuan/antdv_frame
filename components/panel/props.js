@@ -17,7 +17,8 @@ export const defaultAdapter = {
       url: indexDef.post?.url,
       method: indexDef.post?.method || 'post',
       modalWidth: indexDef.post?.modalWidth || '500px',
-      dataResolver: data => data
+      dataResolver: data => data,
+      default: indexDef.post?.default || {}
     }
   }
 }

@@ -52,7 +52,11 @@ const indexFn = getIndex(props.index)
 // const indexDef = ref(indexFn() || {})
 
 const indexDef = computed(() => {
-  return indexFn() || {}
+  const def = indexFn() || {}
+  if (def.filterNoCol === undefined) {
+    def.filterNoCol = true
+  }
+  return def
 })
 
 const propsState = ref(indexDef.value?.props || [])
@@ -71,7 +75,7 @@ const toggleUrl = computed(() => {
 })
 
 const { modalOpen, modalRef, openModal, openEdit, submitted, modalTitle, post, tableRef } = useForm(indexDef.value?.post?.name, () => {
-  return Object.assign({}, indexDef.value?.post?.default, props.postData)
+  return Object.assign({}, indexDef.value?.post?.default, Object.assign({}, props.postData, config.value.save.default))
 })
 
 const mapsCache = ref({})
@@ -243,14 +247,13 @@ const filterCols = computed(() => {
 
 // 表单列
 const formCols = computed(() => {
-  return indexDef.value.props.filter(item => item.form || item.formSlot).map(item => {
+  return propsState.value.filter(item => item.form || item.formSlot).map(item => {
 
     item.formIf = item.formIf || (() => true)
     item.formName = item.formName || item.dataIndex
     item.mapIndex = item.mapIndex || item.dataIndex
 
     const formFn = useAsFunction(item.formProps)
-
 
     item.formProps = (col) => {
       const res = Object.assign({
@@ -269,12 +272,12 @@ const formCols = computed(() => {
 })
 
 const colSlots = computed(() => {
-  return indexDef.value?.props.filter(item => item.slot).map(item => item.slot)
+  return propsState.value.filter(item => item.slot).map(item => item.slot)
 })
 
 // 初始过滤条件
 const initFilters = computed(() => {
-  return indexDef.value?.props.filter(item => item.initFilter).reduce((res, item) => {
+  return propsState.value.filter(item => item.initFilter).reduce((res, item) => {
     const filter = useAsFunction(item.initFilter)()
 
     switch (item.filter) {
@@ -394,12 +397,13 @@ const slots = useSlots()
         <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"
           :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" v-if="col.formIf(post)"
           :wrapperCol="col.formWrapperCol || undefined">
-          <component v-if="hasFormComponent(col.form)"
-            :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col))">
-          </component>
           <template v-if="col.formSlot">
             <slot :name="col.formSlot" :post="post" :column="col"></slot>
           </template>
+
+          <component v-else-if="hasFormComponent(col.form)"
+            :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col))">
+          </component>
         </FormItem>
       </template>
     </ModalForm>
@@ -409,14 +413,14 @@ const slots = useSlots()
         :key="col.filterName">
       <FormItem :label="col.filterTitle || col.title" :disabled="disabledFilters.indexOf(col.filterName) > -1"
         v-bind="col.filterFormProps || indexDef.filterFormProps">
-        <component v-if="hasFilterComponent(col.filter)"
-          :is="renderFilterComponent(col.filter, filters, col.filterName, useAsFunction(col.filterProps)(col))">
-        </component>
         <template v-if="col.filterSlot">
           <slot :name="col.filterSlot" :filters="filters" :field="col.filterName" :column="col"></slot>
         </template>
-        <component v-if="col.filterRender"
+        <component v-else-if="col.filterRender"
           :is="col.filterRender(filters, col, mapArray, disabledFilters.indexOf(col.filterName) > -1)"></component>
+          <component v-else-if="hasFilterComponent(col.filter)"
+          :is="renderFilterComponent(col.filter, filters, col.filterName, useAsFunction(col.filterProps)(col))">
+        </component>
       </FormItem>
       </Col>
     </template>
