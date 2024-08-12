@@ -66,7 +66,9 @@ const config = computed(() => {
 
   return {
     query: adapter.query(indexDef.value, props),
-    save: adapter.save(indexDef.value),
+    save: adapter.save(indexDef.value, props),
+    delete: adapter.delete(indexDef.value),
+    toggle: adapter.toggle(indexDef.value),
   }
 })
 
@@ -154,7 +156,7 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits(['loaded'])
+const emit = defineEmits(['loaded', 'toggle'])
 
 function onLoaded(res, req) {
   emit('loaded', res, req)
@@ -176,14 +178,17 @@ const columns = computed(() => {
         return render(data, emit)
       }
     } else {
+      const toggle = config.value.toggle || {}
+
       if (column.dataType == 'datetime' && !column.resolver) {
         col.customRender = ({ text }) => fmtDatetime(text)
-      } else if (column.dataType == 'toggle') {
+      } else if (column.dataType == 'toggle' && toggle.url) {
+ 
         col.customRender = ({ text, record }) => {
           return h(Switch, {
-            checked: text,
+            checked: toggle.valueResover ? toggle.valueResover(text, record) : text,
             onChange: (checked) => {
-              request.post(replaceParams(toggleUrl, record)).then(() => {
+              request.post(replaceParams(toggle.url, record),  toggle.dataResolver ? toggle.dataResolver(checked, record) : {}).then(() => {
                 emit('toggle', record)
                 refreshTable()
               })
@@ -321,28 +326,29 @@ const refreshTable = (data = {}) => {
 const actions = computed(() => {
   const defActs = (indexDef.value.actions || [])
   const extra = []
-  const post = indexDef.value.post
+  const post = config.value.save
   const showActionTitle = indexDef.value.showActionTitle == undefined ? true : indexDef.value.showActionTitle
-  if (post && !post.noEdit) {
+  if (post.url && !post.noEdit) {
     extra.push({
       title: showActionTitle ? '编辑' : '',
       action: (record) => {
         if (post.detailUrl) {
           request({
             url: replaceParams(post.detailUrl, record),
-            method: 'get'
+            method: post.detailMethod || 'get',
+            data: post.detailDataResolver ? post.detailDataResolver(record) : {}
           }).then(({ data }) => openEdit(data))
         } else {
           openEdit(record)
         }
       },
       icon: h(EditOutlined),
-      disabled: record => post.editDisabled ? post.editDisabled(record) : false
+      disabled: record => post.editDisabled ? useAsFunction(post.editDisabled)(record) : false
     })
   }
 
-  const del = indexDef.value.delete
-  if (del) {
+  const del = config.value.delete
+  if (del.url) {
     const confirm = del.confirm
     extra.push({
       title: showActionTitle ? '删除' : '',
@@ -351,6 +357,7 @@ const actions = computed(() => {
         request({
           url,
           method: del.method || 'delete',
+          data: del.dataResolver ? del.dataResolver(record) : {}
         }).then(() => {
           message.info('删除成功')
           refreshTable()
@@ -358,8 +365,8 @@ const actions = computed(() => {
       },
       danger: true,
       icon: h(DeleteOutlined),
-      confirm: record => confirm ? confirm(record) : `确定删除 ${record}`,
-      disabled: record => del.disabled ? del.disabled(record) : false
+      confirm: record => confirm ? useAsFunction(confirm)(record) : `确定删除 ${record}`,
+      disabled: record => del.disabled ? useAsFunction(del.disabled)(record) : false
     })
   }
 

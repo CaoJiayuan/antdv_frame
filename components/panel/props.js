@@ -18,7 +18,25 @@ export const defaultAdapter = {
       method: indexDef.post?.method || 'post',
       modalWidth: indexDef.post?.modalWidth || '500px',
       dataResolver: data => data,
-      default: indexDef.post?.default || {}
+      default: indexDef.post?.default || {},
+      noEdit: indexDef.post?.noEdit,
+      editDisabled: indexDef.post?.editDisabled
+    }
+  },
+  delete(indexDef) {
+    return {
+      url: indexDef.delete?.url,
+      method: indexDef.delete?.method || 'delete',
+      dataResolver: data => ({}),
+      confirm: indexDef.delete?.confirm,
+      disabled: indexDef.delete?.disabled
+    }
+  },
+  toggle(indexDef) {
+    return {
+      url: indexDef.toggleUrl,
+      valueResover: value => value,
+      dataResolver: (checked, record) => ({})
     }
   }
 }
