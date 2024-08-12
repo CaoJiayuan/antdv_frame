@@ -156,7 +156,7 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits(['loaded', 'toggle'])
+const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete'])
 
 function onLoaded(res, req) {
   emit('loaded', res, req)
@@ -337,8 +337,12 @@ const actions = computed(() => {
             url: replaceParams(post.detailUrl, record),
             method: post.detailMethod || 'get',
             data: post.detailDataResolver ? post.detailDataResolver(record) : {}
-          }).then(({ data }) => openEdit(data))
+          }).then(({ data }) => {
+            emit('beforeEdit', data)
+            openEdit(data)
+          })
         } else {
+          emit('beforeEdit', record)
           openEdit(record)
         }
       },
@@ -354,6 +358,7 @@ const actions = computed(() => {
       title: showActionTitle ? '删除' : '',
       action: record => {
         const url = replaceParams(del.url, record)
+        emit('beforeDelete', record)
         request({
           url,
           method: del.method || 'delete',
