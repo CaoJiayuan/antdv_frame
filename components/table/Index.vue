@@ -94,6 +94,12 @@ const columnsState = computed(() => props.columns.map(col => {
   return col
 }))
 
+const showState = ref(columnsState.value.map(col => col.show))
+
+watch(() => columnsState.value, now => {
+  showState.value = now.map(col => col.show)
+})
+
 const sortState = ref(Object.assign({}, useAsFunction(props.sort)()))
 
 const autoRefreshRef = ref(props.autoRefresh)
@@ -249,7 +255,9 @@ const formatButtons = computed(() => {
 
 const formatColumns = computed(() => {
   const actions = props.actions || []
-  const columns = columnsState.value.filter(col => col.show)
+  const columns = columnsState.value.filter((col, index) => {
+     return showState.value[index]
+  })
   if (actions.length > 0) {
     columns.push({
       key: 'action',
@@ -404,8 +412,8 @@ onMounted(() => {
             <Popover placement="bottomRight" trigger="click">
               <template #content>
                 <div class="table-columns-setting">
-                  <div v-for="col in columnsState" :key="col.dataIndex">
-                    <Checkbox v-model:checked="col.show"></Checkbox> {{ col.title }}
+                  <div v-for="(col, idx) in columnsState" :key="col.dataIndex">
+                    <Checkbox v-model:checked="showState[idx]"></Checkbox> {{ col.title }}
                   </div>
                 </div>
                 <div class="flex">
