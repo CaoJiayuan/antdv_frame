@@ -52,6 +52,10 @@ const indexFn = getIndex(props.index)
 // const indexDef = ref(indexFn() || {})
 
 const indexDef = computed(() => {
+  if (!indexFn) {
+    return {}
+  }
+
   const def = indexFn() || {}
   if (def.filterNoCol === undefined) {
     def.filterNoCol = true
