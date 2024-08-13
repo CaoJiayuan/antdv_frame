@@ -187,13 +187,14 @@ const columns = computed(() => {
 
         col.customRender = ({ text, record }) => {
           return h(Switch, {
-            checked: toggle.valueResover ? toggle.valueResover(text, record) : text,
+            checked: toggle.valueResover ? toggle.valueResover(text, record, col) : text,
             onChange: (checked) => {
-              request.post(replaceParams(toggle.url, record), toggle.dataResolver ? toggle.dataResolver(checked, record) : {}).then(() => {
+              request.post(replaceParams(toggle.url, record), toggle.dataResolver ? toggle.dataResolver(checked, record, col) : {}).then(() => {
                 emit('toggle', record)
                 refreshTable()
               })
-            }
+            },
+            disabled: toggle.disabled ? useAsFunction(toggle.disabled)(record, col) : false
           })
         }
       } else if (column.dataType == 'map') {
@@ -316,7 +317,7 @@ const buttons = computed(() => {
       ...defBtns
     ]
   }
-  
+
   const exportBtn = indexDef.value.export
 
   return defBtns
