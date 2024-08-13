@@ -60,15 +60,16 @@ const indexDef = computed(() => {
 })
 
 const propsState = ref(indexDef.value?.props || [])
+const adapterState = ref({})
 
 const config = computed(() => {
   const adapter = usePanelAdapterStore().getAdapter(indexDef.value?.adapter || 'default')
 
   return {
-    query: adapter.query(indexDef.value, props),
-    save: adapter.save(indexDef.value, props),
-    delete: adapter.delete(indexDef.value),
-    toggle: adapter.toggle(indexDef.value),
+    query: adapter.query(indexDef.value, props, adapterState.value),
+    save: adapter.save(indexDef.value, props, adapterState.value),
+    delete: adapter.delete(indexDef.value, props, adapterState.value),
+    toggle: adapter.toggle(indexDef.value, props, adapterState.value),
   }
 })
 
@@ -183,12 +184,12 @@ const columns = computed(() => {
       if (column.dataType == 'datetime' && !column.resolver) {
         col.customRender = ({ text }) => fmtDatetime(text)
       } else if (column.dataType == 'toggle' && toggle.url) {
- 
+
         col.customRender = ({ text, record }) => {
           return h(Switch, {
             checked: toggle.valueResover ? toggle.valueResover(text, record) : text,
             onChange: (checked) => {
-              request.post(replaceParams(toggle.url, record),  toggle.dataResolver ? toggle.dataResolver(checked, record) : {}).then(() => {
+              request.post(replaceParams(toggle.url, record), toggle.dataResolver ? toggle.dataResolver(checked, record) : {}).then(() => {
                 emit('toggle', record)
                 refreshTable()
               })
@@ -302,17 +303,20 @@ const initFilters = computed(() => {
 // 按钮
 const buttons = computed(() => {
   const defBtns = (indexDef.value.buttons || [])
-  if (indexDef.value.post) {
+  const save = config.value.save
+
+  if (save.url) {
     return [
       {
         title: '新增',
         action: () => openModal(),
         icon: h(PlusCircleOutlined),
-        disabled: () => props.addDisabled
+        disabled: () => save.disabled
       },
       ...defBtns
     ]
   }
+  
   const exportBtn = indexDef.value.export
 
   return defBtns
@@ -430,7 +434,7 @@ const slots = useSlots()
         </template>
         <component v-else-if="col.filterRender"
           :is="col.filterRender(filters, col, mapArray, disabledFilters.indexOf(col.filterName) > -1)"></component>
-          <component v-else-if="hasFilterComponent(col.filter)"
+        <component v-else-if="hasFilterComponent(col.filter)"
           :is="renderFilterComponent(col.filter, filters, col.filterName, useAsFunction(col.filterProps)(col))">
         </component>
       </FormItem>

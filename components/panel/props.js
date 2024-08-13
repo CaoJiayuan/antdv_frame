@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 export const defaultAdapter = {
-  query(indexDef, props) {
+  query(indexDef, props, state) {
     return {
       url: indexDef.apiUrl,
       method: indexDef.method || 'POST',
@@ -12,7 +12,7 @@ export const defaultAdapter = {
       }
     }
   },
-  save(indexDef, props) {
+  save(indexDef, props, state) {
     return {
       url: indexDef.post?.url,
       method: indexDef.post?.method || 'post',
@@ -23,7 +23,7 @@ export const defaultAdapter = {
       editDisabled: indexDef.post?.editDisabled
     }
   },
-  delete(indexDef) {
+  delete(indexDef, props, state) {
     return {
       url: indexDef.delete?.url,
       method: indexDef.delete?.method || 'delete',
@@ -32,7 +32,7 @@ export const defaultAdapter = {
       disabled: indexDef.delete?.disabled
     }
   },
-  toggle(indexDef) {
+  toggle(indexDef, props, state) {
     return {
       url: indexDef.toggleUrl,
       valueResover: value => value,

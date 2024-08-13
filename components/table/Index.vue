@@ -156,9 +156,10 @@ const refresh = (data = {}) => {
 props.autoload && refresh()
 
 watch(() => props.searchData, (now, _old) => {
-  //console.log(now == _old, _.eq(now, _old), now, _old)
+  const isSame = JSON.stringify(now) == JSON.stringify(_old)
+  //console.log(now == _old, _.eq(now, _old), now, _old, isSame)
 
-  refresh()
+  isSame || refresh()
 })
 
 const pagination = computed(() => {
