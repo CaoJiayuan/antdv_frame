@@ -1,7 +1,11 @@
 <script setup>
 import { Modal, Form, message } from 'ant-design-vue'
-import { computed, ref } from 'vue'
-import {getRequest} from '../../request'
+import { computed, onMounted, ref } from 'vue'
+import { getRequest } from '../../request'
+import { useDraggable } from '@vueuse/core'
+import { functions } from 'nerio-js-utils'
+
+const { useAsFunction } = functions
 const request = getRequest()
 
 const emit = defineEmits(['update:open', 'submitted'])
@@ -23,7 +27,10 @@ const props = defineProps({
     default: () => ({ span: 20 })
   },
   rules: Object,
-  width: String | Number,
+  width: {
+    type: [String, Number],
+    default: () => 500
+  },
   successMsg: {
     type: String,
     default: () => "保存成功"
@@ -37,6 +44,9 @@ const props = defineProps({
     default: data => {
       return data
     }
+  },
+  initPosition: {
+    type: [Object, Function],
   }
 })
 
@@ -86,9 +96,39 @@ const resetForm = () => {
   formRef.value.resetFields();
 };
 
+
+
+const vw = computed(() => document.body.offsetWidth)
+
+const handle = ref(null)
+
+const offset = computed(() => {
+  var width = parseInt(props.w)
+
+  if (handle.value != null) {
+    width = handle.value.offsetWidth + 20
+  }
+
+  return parseInt(vw.value / 2 - width / 2) + 10
+})
+
+const initPos = computed(() => {
+  if (props.initPosition) {
+    return useAsFunction(props.initPosition)(offset.value)
+  }
+
+  return { x: offset.value, y: 100 }
+})
+
+const { x, y } = useDraggable(handle, {
+  preventDefault: true,
+  initialValue: initPos.value
+})
+
 const openModal = () => {
   modalOpen.value = true
-
+  x.value = offset.value
+  y.value = 100
   return () => {
     resetForm()
     modalOpen.value = false
@@ -97,10 +137,32 @@ const openModal = () => {
 
 defineExpose({ openModal })
 
+const modelStyle = computed(() => {
+  if (handle.value == null) {
+    return {}
+  }
+
+
+  var offsetValue = offset.value
+
+  // width handle.value.offsetWidth
+
+  return {
+    top: `${y.value - 10}px`,
+    left: `${x.value - offsetValue}px`,
+    // transformOrigin: '0 0'
+  }
+})
+
 </script>
 <template>
   <Modal :width="width" :ok-button-props="okBtnProps" :mask-closable="false" v-model:open="modalOpen" @ok="onSubmit"
-    :title="title" @cancel="resetForm" class="modal-form">
+    @cancel="resetForm" class="modal-form" :style="modelStyle">
+    <template #title>
+      <div ref="handle" style="touch-action:none;cursor: move;">
+        {{ title }}
+      </div>
+    </template>
     <Form ref="formRef" :model="formState" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol">
       <slot></slot>
     </Form>
@@ -109,7 +171,7 @@ defineExpose({ openModal })
 <style lang="scss">
 .modal-form {
   .ant-modal-content {
-    padding: 18px 10px 10px;
+    padding: 10px;
 
     .ant-modal-header {
       text-align: center;

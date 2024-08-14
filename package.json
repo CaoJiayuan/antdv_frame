@@ -1,6 +1,6 @@
 {
   "name": "nerio-antdv-frame",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "antdv web framework",
   "main": "index.js",
   "scripts": {
@@ -13,6 +13,7 @@
     "ant-design-vue": "^4.2.3",
     "nerio-js-utils": "^1.0.11",
     "pinia": "^2.1.6",
+    "@vueuse/core": "^10.11.1",
     "quill-blot-formatter": "^1.0.5",
     "quill-image-uploader": "^1.3.0"
   },
