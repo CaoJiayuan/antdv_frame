@@ -412,28 +412,31 @@ const slots = useSlots()
     </template>
     <ModalForm v-if="config.save.url" ref="modalRef" :method="config.save?.method || 'post'" @submitted="submitted"
       :width="config.save.modalWidth || '500px'" :title="modalTitle" v-model:open="modalOpen" :model="post"
-      :api-url="config.save.url" :data-resolver="config.save.dataResolver">
-      <template v-for="col in formCols" :key="col.dataIndex">
-
-        <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"
-          :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" v-if="col.formIf(post)"
-          :wrapperCol="col.formWrapperCol || undefined">
-          <template v-if="col.formSlot">
-            <slot :name="col.formSlot" :post="post" :column="col"></slot>
-          </template>
-
-          <component v-else-if="hasFormComponent(col.form)"
-            :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col))">
-          </component>
-        </FormItem>
-      </template>
+      :api-url="config.save.url" :data-resolver="config.save.dataResolver" :label-col="config.save.labelCol"
+      :wrapper-col="config.save.wrapperCol">
+      <Row :gutter="[12, 0]">
+        <template v-for="col in formCols" :key="col.dataIndex">
+          <Col v-bind="col.formCol || { span: 24 }">
+          <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"
+            :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" v-if="col.formIf(post)"
+            :wrapperCol="col.formWrapperCol || undefined" :label-col="col.formLabelCol || undefined">
+            <template v-if="col.formSlot">
+              <slot :name="col.formSlot" :post="post" :column="col"></slot>
+            </template>
+            <component v-else-if="hasFormComponent(col.form)"
+              :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col))">
+            </component>
+          </FormItem>
+          </Col>
+        </template>
+      </Row>
     </ModalForm>
 
     <template #filters="{ filters }" v-if="filterCols.length > 0">
       <Col :span="indexDef.filterNoCol ? undefined : col.filterSpan || 6" v-for="col in filterCols"
-        :key="col.filterName">
+        :key="col.filterName" v-bind="col.filterCol">
       <FormItem :label="col.filterTitle || col.title" :disabled="disabledFilters.indexOf(col.filterName) > -1"
-        v-bind="col.filterFormProps || indexDef.filterFormProps">
+        v-bind="col.filterFormProps || indexDef.filterFormProps" :label-col="col.filterLabelCol" :wrapper-col="col.filterWrapperCol">
         <template v-if="col.filterSlot">
           <slot :name="col.filterSlot" :filters="filters" :field="col.filterName" :column="col"></slot>
         </template>

@@ -20,7 +20,9 @@ export const defaultAdapter = {
       dataResolver: data => data,
       default: indexDef.post?.default || {},
       noEdit: indexDef.post?.noEdit,
-      editDisabled: indexDef.post?.editDisabled
+      editDisabled: indexDef.post?.editDisabled,
+      labelCol: indexDef.post?.labelCol,
+      wrapperCol: indexDef.post?.wrapperCol
     }
   },
   delete(indexDef, props, state) {
