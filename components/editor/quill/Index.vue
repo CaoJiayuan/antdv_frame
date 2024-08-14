@@ -185,7 +185,7 @@ const attrs = useAttrs()
     position: absolute;
     left: 0;
     top: 0;
-    background-color: rgba(58, 58, 58, 0.1);
+    background-color: rgba(100, 100, 100, 0.1);
     border-radius: 8px;
   }
 }

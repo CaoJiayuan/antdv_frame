@@ -171,7 +171,7 @@ const modelStyle = computed(() => {
         {{ title }}
       </div>
     </template>
-    <Form ref="formRef" :model="formState" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol" :disabled="showDetail">
+    <Form ref="formRef" :class="{ 'detail-form': showDetail }" :model="formState" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol" :disabled="showDetail">
       <slot :showDetail="showDetail"></slot>
     </Form>
   </Modal>
@@ -187,6 +187,13 @@ const modelStyle = computed(() => {
 
     .ant-modal-body {
       padding: 12px 2px;
+    }
+  }
+}
+.detail-form {
+  .ant-form-item-control {
+    input,.ant-select-selection-item,.ant-picker input {
+      color: #666666;
     }
   }
 }
