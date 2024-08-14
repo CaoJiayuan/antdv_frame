@@ -1,6 +1,6 @@
 <script setup>
 import { Modal, Form, message } from 'ant-design-vue'
-import { computed, onBeforeUnmount, onMounted, readonly, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, readonly, ref } from 'vue'
 import { getRequest } from '../../request'
 import { useDraggable } from '@vueuse/core'
 import { functions } from 'nerio-js-utils'
@@ -111,17 +111,16 @@ const vw = ref(document.body.offsetWidth)
 
 const vh = ref(document.body.offsetHeight)
 
-const contentEl = ref(null)
-
-const height = computed(() => {
-  if (contentEl.value) {
-    return contentEl.value.offsetHeight
-  }
-
-  return 0
-})
-
-
+const height = ref(0)
+function loadHeight() {
+  nextTick(() => {
+    setTimeout(() => {
+      waitingFor(() => document.querySelector(`.modal-form-${uuid.value}`)).then(el => {
+        height.value = el.offsetHeight
+      })
+    }, 400)
+  })
+}
 const contetWidth = computed(() => {
   var w = parseInt(props.w)
 
@@ -140,9 +139,7 @@ function onResize() {
 
 onMounted(() => {
   vw.value = document.body.offsetWidth
-  waitingFor(() => document.querySelector(`.modal-form-${uuid.value}`)).then(el => {
-    contentEl.value = el
-  })
+  loadHeight()
   window.addEventListener('resize', onResize)
 })
 
@@ -176,7 +173,8 @@ const openModal = (config) => {
   showDetail.value = config?.detail || false
   x.value = offset.value
   y.value = 100
-  
+  loadHeight()
+
   return () => {
     resetForm()
     modalOpen.value = false
@@ -206,7 +204,7 @@ const modelStyle = computed(() => {
     top = padding
   }
 
-  const maxY = (vh.value - height.value - padding - 20)
+  const maxY = (vh.value - height.value - padding)
 
   if (y.value >= maxY) {
     top = maxY
@@ -239,7 +237,8 @@ const modelStyle = computed(() => {
         {{ title }}
       </div>
     </template>
-    <Form ref="formRef" :class="{ 'detail-form': showDetail }" :model="formState" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol" :disabled="showDetail">
+    <Form ref="formRef" :class="{ 'detail-form': showDetail }" :model="formState" :rules="rules" :label-col="labelCol"
+      :wrapper-col="wrapperCol" :disabled="showDetail">
       <slot :showDetail="showDetail"></slot>
     </Form>
   </Modal>
@@ -247,6 +246,7 @@ const modelStyle = computed(() => {
 <style lang="scss">
 .modal-form {
   padding-bottom: 0;
+
   .ant-modal-content {
     padding: 10px;
 
@@ -259,9 +259,13 @@ const modelStyle = computed(() => {
     }
   }
 }
+
 .detail-form {
   .ant-form-item-control {
-    input,.ant-select-selection-item,.ant-picker input {
+
+    input,
+    .ant-select-selection-item,
+    .ant-picker input {
       color: #666666;
     }
   }
