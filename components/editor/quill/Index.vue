@@ -2,7 +2,7 @@
 import { Quill, QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import { functions } from 'nerio-js-utils';
-import { computed, onMounted, ref, unref } from 'vue';
+import { computed, onMounted, ref, unref, useAttrs } from 'vue';
 import { Progress } from 'ant-design-vue'
 import { useUploader } from '../../../request/uploader.js'
 import BlotFormatter from 'quill-blot-formatter'
@@ -22,8 +22,10 @@ const props = defineProps({
   minHeight: {
     type: [Number, String],
     default: 200
-  }
+  },
+  disabled: Boolean
 })
+
 const content = computed({
   get() {
     return props.modelValue
@@ -76,12 +78,15 @@ onMounted(() => {
     quill.container.style.minHeight = `${props.minHeight}px`
   }
 })
+
+
+const attrs = useAttrs()
 </script>
 <template>
   <div class="quill-wrapper">
     <input accept="image/*" type="file" ref="upload" @change="uploadImg" style="display: none;">
     <QuillEditor content-type="html" v-model:content="content" ref="editor" theme="snow" :toolbar="`#${toolbarId}`"
-      :modules="modules">
+      :modules="modules" v-bind="attrs">
       <template #toolbar>
         <div :id="toolbarId">
           <span class="ql-formats">
@@ -155,15 +160,42 @@ onMounted(() => {
         </div>
       </template>
     </QuillEditor>
+    <div class="quill-cover" v-if="disabled">
+
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
 .quill-wrapper {
+  position: relative;
+  .ql-toolbar {
+    border-radius: 8px 8px 0 0;
+  }
+  overflow: hidden;
   .upload-img {
     .ant-progress {
       position: absolute;
       left: 2px;
     }
   }
+  
+  .quill-cover {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: rgba(58, 58, 58, 0.1);
+    border-radius: 8px;
+  }
 }
+</style>
+
+<style lang="scss">
+.quill-wrapper {
+  .ql-container {
+    border-radius: 0 0 8px 8px;
+  }
+}
+
 </style>

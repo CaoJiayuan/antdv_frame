@@ -7,6 +7,7 @@ export const defaultAdapter = {
       url: indexDef.apiUrl,
       method: indexDef.method || 'POST',
       data: Object.assign({}, indexDef.searchData, props.searchData),
+      detailUrl: indexDef.detailUrl,
       after(res, indexProps) {
 
       }

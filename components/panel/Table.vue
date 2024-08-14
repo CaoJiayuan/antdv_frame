@@ -268,7 +268,7 @@ const formCols = computed(() => {
 
     item.formProps = (col) => {
       const res = Object.assign({
-
+        detail: modelFormConfig.value?.detail
       }, formFn(col) || {}, {
         col: col,
         dataSource: mapArray.value[col.mapIndex]
@@ -343,7 +343,7 @@ const actions = computed(() => {
     return request({
       url: replaceParams(query.detailUrl, record),
       method: query.detailMethod || 'post',
-      data: query.detailDataResolver ? post.detailDataResolver(record) : {}
+      data: query.detailDataResolver ? query.detailDataResolver(record) : {}
     }).then(({ data }) => data)
   }
 
@@ -351,7 +351,7 @@ const actions = computed(() => {
     extra.push({
       title: query.detailTitle || '详情',
       action: (record) => {
-        if (post.detailUrl) {
+        if (query.detailUrl) {
           loadDetail(record).then(data => {
             emit('beforeShow', record)
             openShow(data)
