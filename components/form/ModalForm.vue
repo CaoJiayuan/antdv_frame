@@ -1,13 +1,15 @@
 <script setup>
 import { Modal, Form, message } from 'ant-design-vue'
-import { computed, onMounted, readonly, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, readonly, ref } from 'vue'
 import { getRequest } from '../../request'
 import { useDraggable } from '@vueuse/core'
 import { functions } from 'nerio-js-utils'
-
+import md5 from 'blueimp-md5'
 const { useAsFunction } = functions
-const request = getRequest()
+import { waitingFor } from '../../utils/functions'
 
+const request = getRequest()
+const uuid = ref(md5(new Date().toString()))
 const emit = defineEmits(['update:open', 'submitted'])
 
 const props = defineProps({
@@ -103,19 +105,57 @@ const resetForm = () => {
 };
 
 
-
-const vw = computed(() => document.body.offsetWidth)
-
 const handle = ref(null)
 
-const offset = computed(() => {
-  var width = parseInt(props.w)
+const vw = ref(document.body.offsetWidth)
 
-  if (handle.value != null) {
-    width = handle.value.offsetWidth + 20
+const vh = ref(document.body.offsetHeight)
+
+const contentEl = ref(null)
+
+const height = computed(() => {
+  if (contentEl.value) {
+    return contentEl.value.offsetHeight
   }
 
-  return parseInt(vw.value / 2 - width / 2) + 10
+  return 0
+})
+
+
+const contetWidth = computed(() => {
+  var w = parseInt(props.w)
+
+  if (handle.value != null) {
+    w = handle.value.offsetWidth + 20
+  }
+
+  return w
+})
+
+
+function onResize() {
+  vw.value = document.body.offsetWidth
+  vh.value = document.body.offsetHeight
+}
+
+onMounted(() => {
+  vw.value = document.body.offsetWidth
+  waitingFor(() => document.querySelector(`.modal-form-${uuid.value}`)).then(el => {
+    contentEl.value = el
+  })
+  window.addEventListener('resize', onResize)
+})
+
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+})
+
+
+
+const offset = computed(() => {
+
+  return parseInt(vw.value / 2 - contetWidth.value / 2) + 10
 })
 
 const initPos = computed(() => {
@@ -151,13 +191,41 @@ const modelStyle = computed(() => {
   }
 
 
-  var offsetValue = offset.value
+  var offsetX = offset.value
+  var offsetY = 10
+
+  var padding = 8;
 
   // width handle.value.offsetWidth
 
+  var top = y.value - offsetY
+  var left = x.value - offsetX
+
+
+  if (y.value <= offsetY + padding) {
+    top = padding
+  }
+
+  const maxY = (vh.value - height.value - padding - 20)
+
+  if (y.value >= maxY) {
+    top = maxY
+  }
+
+  if (x.value <= padding + 10) {
+    left = padding - offsetX + 10
+  }
+
+  const maxX = (vw.value - contetWidth.value - padding + 10)
+
+  if (x.value >= maxX) {
+    // left = offsetX - padding - 10
+    left = maxX - offsetX
+  }
+
   return {
-    top: `${y.value - 10}px`,
-    left: `${x.value - offsetValue}px`,
+    top: `${top}px`,
+    left: `${left}px`,
     // transformOrigin: '0 0'
   }
 })
@@ -165,7 +233,7 @@ const modelStyle = computed(() => {
 </script>
 <template>
   <Modal :width="width" :ok-button-props="okBtnProps" :mask-closable="false" v-model:open="modalOpen" @ok="onSubmit"
-    @cancel="resetForm" class="modal-form" :style="modelStyle" >
+    @cancel="resetForm" class="modal-form" :style="modelStyle" :class="`modal-form-${uuid}`">
     <template #title>
       <div ref="handle" style="touch-action:none;cursor: move;">
         {{ title }}
@@ -178,6 +246,7 @@ const modelStyle = computed(() => {
 </template>
 <style lang="scss">
 .modal-form {
+  padding-bottom: 0;
   .ant-modal-content {
     padding: 10px;
 
