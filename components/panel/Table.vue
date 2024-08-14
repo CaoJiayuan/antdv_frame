@@ -4,7 +4,7 @@ import { getRequest } from '../../request'
 const request = getRequest()
 
 import { FormItem, Col, Row, message, Switch, Card } from 'ant-design-vue'
-import { PlusCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { PlusCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons-vue'
 import ModalForm from '../form/ModalForm.vue'
 import { computed, h, onMounted, ref, useSlots } from 'vue'
 import { fmtDatetime } from '../../utils/date.js'
@@ -81,7 +81,7 @@ const toggleUrl = computed(() => {
   return indexDef.value.toggleUrl || `/${indexDef.value.apiUrl}/toggle/:id`
 })
 
-const { modalOpen, modalRef, openModal, openEdit, submitted, modalTitle, post, tableRef } = useForm(indexDef.value?.post?.name, () => {
+const { modalOpen, modalRef, openModal, openShow, openEdit, submitted, modelFormConfig, modalTitle, post, tableRef } = useForm(indexDef.value?.post?.name, () => {
   return Object.assign({}, indexDef.value?.post?.default, Object.assign({}, props.postData, useAsFunction(config.value.save.default)()))
 })
 
@@ -161,7 +161,7 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete'])
+const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow'])
 
 function onLoaded(res, req) {
   emit('loaded', res, req)
@@ -337,16 +337,41 @@ const actions = computed(() => {
   const extra = []
   const post = config.value.save
   const showActionTitle = indexDef.value.showActionTitle == undefined ? true : indexDef.value.showActionTitle
+  const query = config.value.query
+
+  const loadDetail = (record) => {
+    return request({
+      url: replaceParams(query.detailUrl, record),
+      method: query.detailMethod || 'post',
+      data: query.detailDataResolver ? post.detailDataResolver(record) : {}
+    }).then(({ data }) => data)
+  }
+
+  if (query.url && !query.noDetail) {
+    extra.push({
+      title: query.detailTitle || '详情',
+      action: (record) => {
+        if (post.detailUrl) {
+          loadDetail(record).then(data => {
+            emit('beforeShow', record)
+            openShow(data)
+          })
+        } else {
+          emit('beforeShow', record)
+          openShow(record)
+        }
+      },
+      icon: h(EyeOutlined),
+      disabled: record => query.detailDisabled ? useAsFunction(post.detailDisabled)(record) : false
+    })
+  }
+
   if (post.url && !post.noEdit) {
     extra.push({
       title: showActionTitle ? '编辑' : '',
       action: (record) => {
-        if (post.detailUrl) {
-          request({
-            url: replaceParams(post.detailUrl, record),
-            method: post.detailMethod || 'get',
-            data: post.detailDataResolver ? post.detailDataResolver(record) : {}
-          }).then(({ data }) => {
+        if (query.detailUrl) {
+          loadDetail(record).then(data => {
             emit('beforeEdit', data)
             openEdit(data)
           })
@@ -359,6 +384,7 @@ const actions = computed(() => {
       disabled: record => post.editDisabled ? useAsFunction(post.editDisabled)(record) : false
     })
   }
+  
 
   const del = config.value.delete
   if (del.url) {
@@ -418,7 +444,7 @@ const slots = useSlots()
         <template v-for="col in formCols" :key="col.dataIndex">
           <Col v-bind="col.formCol || { span: 24 }">
           <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"
-            :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" v-if="col.formIf(post)"
+            :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" v-if="col.formIf(post, modelFormConfig)"
             :wrapperCol="col.formWrapperCol || undefined" :label-col="col.formLabelCol || undefined">
             <template v-if="col.formSlot">
               <slot :name="col.formSlot" :post="post" :column="col"></slot>
@@ -436,7 +462,8 @@ const slots = useSlots()
       <Col :span="indexDef.filterNoCol ? undefined : col.filterSpan || 6" v-for="col in filterCols"
         :key="col.filterName" v-bind="col.filterCol">
       <FormItem :label="col.filterTitle || col.title" :disabled="disabledFilters.indexOf(col.filterName) > -1"
-        v-bind="col.filterFormProps || indexDef.filterFormProps" :label-col="col.filterLabelCol" :wrapper-col="col.filterWrapperCol">
+        v-bind="col.filterFormProps || indexDef.filterFormProps" :label-col="col.filterLabelCol"
+        :wrapper-col="col.filterWrapperCol">
         <template v-if="col.filterSlot">
           <slot :name="col.filterSlot" :filters="filters" :field="col.filterName" :column="col"></slot>
         </template>

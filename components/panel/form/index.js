@@ -61,17 +61,25 @@ export function useForm(name, defaultPost = {}) {
   const tableRef = ref()
   const modalRef = ref()
 
+  const modelFormConfig = ref({})
+
   let cancelModal = () => { }
 
-  const openModal = () => {
+  const openModal = (config = {}) => {
+    modelFormConfig.value = config
     post.value = useAsFunction(defaultPost)()
     if (modalRef.value) {
-      cancelModal = modalRef.value.openModal()
+      cancelModal = modalRef.value.openModal(config)
     }
   }
 
   const modalTitle = computed(() => {
-    return `${post.value.id ? '修改' : '新增'}${name}`
+    var pre = post.value.id ? '修改' : '新增'
+    if (modelFormConfig.value?.detail) {
+      pre = '查看'
+    }
+
+    return `${pre}${name}`
   })
 
   const refreshTable = () => {
@@ -88,5 +96,12 @@ export function useForm(name, defaultPost = {}) {
     refreshTable()
   }
 
-  return {modalOpen, modalRef, openModal, openEdit, submitted, modalTitle, post, tableRef}
+  function openShow(record) {
+    openModal({
+      detail: true,
+    })
+    post.value = Object.assign({}, record)
+  }
+
+  return {modalOpen, modalRef, openModal, openEdit, modelFormConfig, openShow, submitted, modalTitle, post, tableRef}
 }

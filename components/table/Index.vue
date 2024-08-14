@@ -33,7 +33,11 @@ const props = defineProps({
   buttons: Array,
   actionWidth: {
     type: [String, Number],
-    default: () => 200
+    default: () => 210
+  },
+  actionAlign: {
+    type: String,
+    default: () => 'center'
   },
   refreshable: {
     type: Boolean,
@@ -256,7 +260,7 @@ const formatButtons = computed(() => {
 const formatColumns = computed(() => {
   const actions = props.actions || []
   const columns = columnsState.value.filter((col, index) => {
-     return showState.value[index]
+    return showState.value[index]
   })
   if (actions.length > 0) {
     columns.push({
@@ -272,7 +276,8 @@ const formatColumns = computed(() => {
       }),
       fixed: 'right',
       title: '操作',
-      width: props.actionWidth
+      width: props.actionWidth,
+      align: props.actionAlign
     })
   }
 
@@ -440,11 +445,12 @@ onMounted(() => {
             <template :key="idx" v-for="(action, idx) in column.actions">
               <Popconfirm v-if="action.confirm && !action.disabled(record)" @confirm="action.onClick(record)"
                 :title="action.confirm(record)">
-                <Button :type="action.type" :icon="action.icon" :size="action.size" :danger="action.danger"
-                  :disabled="action.disabled(record)">{{ action.title }}</Button>
+                <Button class="table-action-btn" :type="action.type" :icon="action.icon" :size="action.size"
+                  :danger="action.danger" :disabled="action.disabled(record)">{{ action.title }}</Button>
               </Popconfirm>
-              <Button v-else :type="action.type" @click="action.onClick(record)" :icon="action.icon" :size="action.size"
-                :danger="action.danger" :disabled="action.disabled(record)">{{ action.title }}</Button>
+              <Button class="table-action-btn" v-else :type="action.type" @click="action.onClick(record)"
+                :icon="action.icon" :size="action.size" :danger="action.danger" :disabled="action.disabled(record)">{{
+      action.title }}</Button>
             </template>
           </template>
           <template v-for="col in formatColumns">
@@ -490,6 +496,10 @@ onMounted(() => {
   >div {
     padding: 2px 0;
   }
+}
+
+.table-action-btn.ant-btn-sm {
+  font-size: 13px;
 }
 </style>
 

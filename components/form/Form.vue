@@ -25,6 +25,9 @@ const props = defineProps({
   okText: {
     type: String,
     default: () => "保存"
+  },
+  disabled: {
+    type: Boolean,
   }
 })
 
@@ -64,10 +67,10 @@ defineExpose({resetForm})
 
 </script>
 <template>
-  <Form @finish="onSubmit" ref="formRef" :model="formState" :rules="rules" :label-col="labelCol"
+  <Form @finish="onSubmit" ref="formRef" :model="formState" :rules="rules" :label-col="labelCol" :disabled="disabled"
     :wrapper-col="wrapperCol">
     <slot></slot>
-    <div class="form-actions">
+    <div class="form-actions" v-if="!readonly">
       <Button type="primary" html-type="submit">{{ okText }}</Button>
       <Button @click="resetForm">重置</Button>
     </div>

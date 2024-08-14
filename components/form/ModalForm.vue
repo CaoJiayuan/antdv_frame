@@ -1,6 +1,6 @@
 <script setup>
 import { Modal, Form, message } from 'ant-design-vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, readonly, ref } from 'vue'
 import { getRequest } from '../../request'
 import { useDraggable } from '@vueuse/core'
 import { functions } from 'nerio-js-utils'
@@ -47,9 +47,12 @@ const props = defineProps({
   },
   initPosition: {
     type: [Object, Function],
+  },
+  disabled: {
+    type: Boolean
   }
 })
-
+const showDetail = ref(props.disabled)
 const modalOpen = computed({
   get() {
     return props.open
@@ -88,7 +91,10 @@ const onSubmit = () => {
 
 const okBtnProps = computed(() => {
   return {
-    loading: loading.value
+    loading: loading.value,
+    style: {
+      display: showDetail.value ? 'none' : ''
+    }
   }
 })
 
@@ -125,10 +131,12 @@ const { x, y } = useDraggable(handle, {
   initialValue: initPos.value
 })
 
-const openModal = () => {
+const openModal = (config) => {
   modalOpen.value = true
+  showDetail.value = config?.detail || false
   x.value = offset.value
   y.value = 100
+  
   return () => {
     resetForm()
     modalOpen.value = false
@@ -157,14 +165,14 @@ const modelStyle = computed(() => {
 </script>
 <template>
   <Modal :width="width" :ok-button-props="okBtnProps" :mask-closable="false" v-model:open="modalOpen" @ok="onSubmit"
-    @cancel="resetForm" class="modal-form" :style="modelStyle">
+    @cancel="resetForm" class="modal-form" :style="modelStyle" >
     <template #title>
       <div ref="handle" style="touch-action:none;cursor: move;">
         {{ title }}
       </div>
     </template>
-    <Form ref="formRef" :model="formState" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol">
-      <slot></slot>
+    <Form ref="formRef" :model="formState" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol" :disabled="showDetail">
+      <slot :showDetail="showDetail"></slot>
     </Form>
   </Modal>
 </template>
