@@ -53,15 +53,7 @@ const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp']
 
 export function useUploader(url) {
 
-  const file = ref({
-    progress: 0,
-    url: null,
-    error: false,
-    errorMsg: '',
-    done: false,
-    uploading: false,
-    valid: true,
-  })
+  const uploads = ref([])
 
   function getIconByExtention(extension) {
     let icon;
@@ -73,20 +65,8 @@ export function useUploader(url) {
     return icon;
   }
 
-  function reset() {
-    file.value = {
-      progress: 0,
-      url: null,
-      error: false,
-      errorMsg: '',
-      done: false,
-      uploading: false,
-      valid: false,
-    }
-  }
-
   function isImageFile(filename) {
-    let partials = filename.split('.');
+    let partials = filename.split('?')[0].split('.');
 
     let ext = partials[partials.length - 1];
 
@@ -95,43 +75,33 @@ export function useUploader(url) {
     }).length > 0
   }
 
-  function setFileFromUrl(url) {
-    if (!url) {
-      reset()
-      return
-    }
-    let partials = url.split(".");
-    let ext = partials[partials.length - 1];
-    let type = "file";
-    if (["png", "jpg", "gif"].indexOf(ext) >= 0) {
-      type = "image/" + ext;
-    }
-
-    file.value = {
-      progress: 0,
-      url: url,
-      error: false,
-      errorMsg: '',
-      done: true,
-      uploading: false,
-      valid: false,
-      preview: isImageFile(url) ? url : getIconByExtention(ext),
-    }
-  }
-
   const uploadDriver = ref('server')
 
   function withUploadDriver(driver) {
     uploadDriver.value = driver
   }
 
-  function uploadFile(f, options = {}) {
+  function uploadFile(f, options = {}, fileHolder = null) {
+    const currentFile = ref({
+      progress: 0,
+      error: false,
+      errorMsg: '',
+      done: false,
+      uploading: false,
+      valid: true,
+      ts: new Date().getTime(),
+      filename: f.name,
+      type: f.type,
+    })
+    uploads.value.push(currentFile.value)
+    //file.value = currentFile
+    fileHolder && fileHolder(currentFile.value)
     const reqOptions = Object.assign({
-      progress: percent => file.value.progress = percent,
+      progress: percent => currentFile.value.progress = percent,
       url
     }, options)
 
-    file.value.valid = true
+    currentFile.value.valid = true
 
     let uploadFile = new UploadFile(f);
 
@@ -139,32 +109,32 @@ export function useUploader(url) {
       let reader = new FileReader();
       reader.readAsDataURL(f);
       reader.onloadend = e => {
-        file.value.preview = e.target.result;
+        currentFile.value.preview = e.target.result;
       };
     } else {
       let extension = uploadFile.getExtension();
       let icon = getIconByExtention(extension);
-      file.value.preview = icon;
+      currentFile.value.preview = icon;
     }
-    file.value.uploading = true
+    currentFile.value.uploading = true
     return upload(f, uploadDriver.value, reqOptions).then(data => {
-      let url = data.url.split('?', 2)[0]
-      file.value.url = url;
-      file.value.path = data.path
-      file.value.progress = 100;
-      file.value.done = true;
-      file.value.uploading = false;
-      file.value.error = false;
-      file.value.errorMsg = '';
-      file.value.preview = url
-      return file.value
+      let url = data.url
+      currentFile.value.url = url;
+      currentFile.value.path = data.path
+      currentFile.value.progress = 100;
+      currentFile.value.done = true;
+      currentFile.value.uploading = false;
+      currentFile.value.error = false;
+      currentFile.value.errorMsg = '';
+      currentFile.value.preview = url
+      return currentFile.value
     }).catch(error => {
-      file.value.error = true;
-      file.value.errorMsg = error.message;
-      return file
+      currentFile.value.error = true;
+      currentFile.value.errorMsg = error.message;
+      return currentFile.value
     });
   }
 
 
-  return { uploadFile, file, reset ,setFileFromUrl, withUploadDriver}
+  return { uploads, uploadFile, isImageFile, withUploadDriver, getIconByExtention }
 }

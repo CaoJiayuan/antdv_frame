@@ -1,8 +1,8 @@
 <script setup>
 import { PlusCircleOutlined } from '@ant-design/icons-vue';
-import { computed, onMounted, ref, unref, watch } from 'vue';
+import { computed, onMounted, ref, unref, } from 'vue';
 import { useUploader } from '../../request/uploader.js'
-
+import _ from 'lodash'
 import { Progress, Image } from 'ant-design-vue'
 const widthMap = {
   small: 32,
@@ -20,13 +20,30 @@ const props = defineProps({
   dataResolver: {
     type: Function,
     default: (data) => {
-      return data.url
+      return {
+        url: data.url,
+        filename: data.name,
+        type: data.type,
+        ts: data.ts
+      }
     }
   },
-  modelValue: String
+  modelValue: {
+    type: Array,
+    default: () => []
+  },
+  maxFiles: {
+    type: Number,
+    default: 6
+  }
 })
 
-const value = computed({
+
+const inputRef = ref()
+
+const { uploads, uploadFile, isImageFile, getIconByExtention } = useUploader(props.url)
+
+const files = computed({
   get() {
     return props.modelValue
   },
@@ -35,14 +52,22 @@ const value = computed({
   }
 })
 
-const inputRef = ref()
+const previewFiles = computed(() => {
+  const fs = _.clone(files.value)
 
-const { file, uploadFile, reset, setFileFromUrl } = useUploader(props.url)
-
+  return fs.concat(uploads.value)
+})
 
 function upload(e) {
-  uploadFile(e.target.files[0]).then((data) => {
-    value.value = props.dataResolver(data)
+  uploadFile(e.target.files[0], {}).then((currentFile) => {
+    //const fileRes = props.dataResolver(data)
+    const idx = uploads.value.indexOf(currentFile)
+    console.log(currentFile, idx)
+    if (idx > -1) {
+      uploads.value.splice(idx, 1)
+      files.value.push(props.dataResolver(currentFile))
+    }
+    resetFile()
   })
 }
 
@@ -51,9 +76,14 @@ function triggerUpload() {
 }
 
 function resetFile() {
-  reset()
-  inputRef.value.value = ''
-  value.value = ''
+  //reset()
+  inputRef.value && (inputRef.value.value = '')
+  //files.value = []
+}
+function removeFile(idx) {
+  if(files.value.length > idx) {
+    files.value.splice(idx, 1)
+  }
 }
 
 const s = computed(() => widthMap[props.size || 'middle'])
@@ -61,34 +91,98 @@ const s = computed(() => widthMap[props.size || 'middle'])
 const btnSize = computed(() => `${s.value}px`)
 const previewSize = computed(() => `${s.value - 4}px`)
 onMounted(() => {
-  setFileFromUrl(unref(value))
+  //setFileFromUrl(unref(value))
 })
 
-const fileItem = computed(() => {
-  if (file.value.valid && unref(value)) {
-    return file.value
+function getPreview(file) {
+  // console.log(file)
+
+  if (file.preview) {
+    return file.preview
   }
-  setFileFromUrl(value.value)
-  return file.value
-})
+
+  if (file.url) {
+
+    if (isImageFile(file.url)) {
+      return file.url
+    }
+
+    let partials = file.url.split('?')[0].split('.');
+    let ext = partials[partials.length - 1];
+    return getIconByExtention(ext)
+  }
+
+  return null
+}
 
 </script>
 <template>
   <div class="upload-wrapper">
-    <div class="upload-btn">
-      <PlusCircleOutlined @click="triggerUpload" v-if="!file.uploading" />
-      <Progress type="circle" :size="s - 6" :percent="file.progress" v-if="file.uploading" />
+    <div class="upload-file" v-for="(file, index) in previewFiles" :key="index">
       <div class="upload-preview">
-        <Image :src="fileItem.preview" v-if="fileItem.preview" :style="{maxWidth: previewSize, maxHeight: previewSize}"/>
+        <Image :src="getPreview(file)" :style="{ maxWidth: previewSize, maxHeight: previewSize }" />
       </div>
+      <Progress type="circle" :size="s - 6" :percent="file.progress" v-if="file.uploading" />
+
+      <a @click="removeFile(index)" v-if="file.url && !file.uploading" class="upload-remove">移除</a>
     </div>
-    <a style="color: red;margin-left: 10px;" @click="resetFile" v-if="fileItem.url">移除</a>
+    <div class="upload-btn"  v-if="previewFiles.length < maxFiles">
+      <PlusCircleOutlined @click="triggerUpload"/>
+    </div>
+
     <input ref="inputRef" type="file" style="display: none" @change="upload">
   </div>
 </template>
 <style lang="scss" scoped>
 .upload-wrapper {
   position: relative;
+  display: flex;
+  gap: 4px;
+
+  .upload-file {
+    position: relative;
+    border: 1px dotted #b9b9b9;
+    border-radius: 8px;
+    overflow: hidden;
+    width: v-bind(btnSize);
+    height: v-bind(btnSize);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .ant-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.253);
+      backdrop-filter: blur(2px);
+      color: white;
+
+      .ant-progress-text {
+        color: white;
+      }
+    }
+
+    .upload-remove {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      font-size: 12px;
+      background: rgba(255, 0, 0, 0.418);
+      width: 100%;
+      color: white;
+      text-align: center;
+      display: none;
+    }
+
+    &:hover {
+      .upload-remove {
+        display: block;
+      }
+    }
+  }
 
   .upload-btn {
     position: relative;
@@ -103,15 +197,23 @@ const fileItem = computed(() => {
     color: #7a7a7a;
     border-radius: 8px;
 
-    .ant-progress {
-      position: absolute;
-    }
-    .upload-preview {
-      position: absolute;
-    }
+
+
+
 
     .anticon {
       cursor: pointer;
+    }
+  }
+}
+</style>
+<style lang="scss">
+.upload-file {
+
+  .ant-progress {
+
+    .ant-progress-text {
+      color: white;
     }
   }
 }

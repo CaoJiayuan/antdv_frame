@@ -46,7 +46,15 @@ const upload = ref(null)
 const editor = ref(null)
 var quill = null
 
-const { file, uploadFile, reset, setFileFromUrl } = useUploader(props.uploadUrl)
+const { uploads, uploadFile } = useUploader(props.uploadUrl)
+
+const file = computed(() => {
+  if (uploads.value.length === 0) {
+    return {}
+  }
+
+  return uploads.value[0]
+})
 
 function imgHandler(state) {
   if (state) {
@@ -176,6 +184,7 @@ const attrs = useAttrs()
     .ant-progress {
       position: absolute;
       left: 2px;
+      top: -1px;
     }
   }
   
