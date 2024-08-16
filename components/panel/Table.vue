@@ -447,7 +447,7 @@ const slots = useSlots()
             :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" v-if="col.formIf(post, modelFormConfig)"
             :wrapperCol="col.formWrapperCol || undefined" :label-col="col.formLabelCol || undefined">
             <template v-if="col.formSlot">
-              <slot :name="col.formSlot" :post="post" :column="col"></slot>
+              <slot :name="col.formSlot" :post="post" :column="col" :detail="modelFormConfig.detail"></slot>
             </template>
             <component v-else-if="hasFormComponent(col.form)"
               :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col))">

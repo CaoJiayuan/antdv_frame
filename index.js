@@ -4,7 +4,7 @@ import { usePanelAdapterStore } from "./components/panel/props";
 import { useRequest, useRequestStore, withUploadDriver } from './request';
 
 import PanelTable from './components/panel/Table.vue'
-import Table from './components/panel/Table.vue';
+import Table from './components/table/Table.vue';
 import UploadFile from './components/upload/file.vue';
 import AntSelect from './components/select/AntSelect.vue';
 import Form from './components/form/Form.vue';

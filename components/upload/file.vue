@@ -43,7 +43,8 @@ const props = defineProps({
   urlPrefix: {
     type: String,
     default: ''
-  }
+  },
+  readonly: Boolean
 })
 
 
@@ -167,9 +168,9 @@ function getPreview(file) {
       </div>
       <Progress type="circle" :size="s - 6" :percent="file.progress" v-if="file.uploading" />
 
-      <a @click="removeFile(index)" v-if="file.url && !file.uploading" class="upload-remove">移除</a>
+      <a @click="removeFile(index)" v-if="!readonly && file.url && !file.uploading" class="upload-remove">移除</a>
     </div>
-    <div class="upload-btn" v-if="previewFiles.length < maxFiles">
+    <div class="upload-btn" v-if="!readonly && previewFiles.length < maxFiles">
       <PlusCircleOutlined @click="triggerUpload" />
     </div>
 

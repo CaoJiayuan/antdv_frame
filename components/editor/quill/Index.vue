@@ -23,6 +23,10 @@ const props = defineProps({
     type: [Number, String],
     default: 200
   },
+  urlPrefix: {
+    type: String,
+    default: ''
+  },
   disabled: Boolean
 })
 
@@ -73,7 +77,7 @@ const uploadImg = (e) => {
       let url = data.url;
       if (quill) {
         let range = quill.getSelection();
-        quill.insertEmbed(range !== null ? range.index : 0, 'image', url, Quill.sources.USER);
+        quill.insertEmbed(range !== null ? range.index : 0, 'image', props.urlPrefix + url, Quill.sources.USER);
       }
     });
   }
