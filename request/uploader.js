@@ -1,3 +1,4 @@
+import { useRequestStore } from '.'
 import { upload, UploadFile } from '../nerio-uploader'
 import { ref } from 'vue'
 
@@ -75,13 +76,11 @@ export function useUploader(url) {
     }).length > 0
   }
 
-  const uploadDriver = ref('server')
 
-  function withUploadDriver(driver) {
-    uploadDriver.value = driver
-  }
+  const { uploadDriver } = useRequestStore()
 
   function uploadFile(f, options = {}, fileHolder = null) {
+    
     const currentFile = ref({
       progress: 0,
       error: false,
@@ -117,7 +116,7 @@ export function useUploader(url) {
       currentFile.value.preview = icon;
     }
     currentFile.value.uploading = true
-    return upload(f, uploadDriver.value, reqOptions).then(data => {
+    return upload(f, uploadDriver, reqOptions).then(data => {
       let url = data.url
       currentFile.value.url = url;
       currentFile.value.path = data.path
@@ -136,5 +135,5 @@ export function useUploader(url) {
   }
 
 
-  return { uploads, uploadFile, isImageFile, withUploadDriver, getIconByExtention }
+  return { uploads, uploadFile, isImageFile, getIconByExtention }
 }

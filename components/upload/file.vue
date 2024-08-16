@@ -22,7 +22,7 @@ const props = defineProps({
     default: (data) => {
       return {
         url: data.url,
-        filename: data.name,
+        filename: data.filename,
         type: data.type,
         ts: data.ts
       }
@@ -35,6 +35,14 @@ const props = defineProps({
   maxFiles: {
     type: Number,
     default: 6
+  },
+  accept: String,
+  validator: {
+    type: Function,
+  },
+  urlPrefix: {
+    type: String,
+    default: ''
   }
 })
 
@@ -57,9 +65,39 @@ const previewFiles = computed(() => {
 
   return fs.concat(uploads.value)
 })
+function getUploadValidator() {
+  if (props.validator) {
+    return props.validator;
+  }
+
+  if (props.accept && props.accept !== '*/*') {
+    return uploadFile => {
+      let parts = props.accept.split(',');
+      for (let i = 0; i < parts.length; i++) {
+        let part = parts[i].trim();
+        if (part.startsWith('.')) {
+          if (uploadFile.getExtension() == part.replace('.', '')) {
+            return true
+          }
+        }
+
+        let reg = new RegExp(part.replace('*', '.*'));
+        if (reg.test(uploadFile.file.type)) {
+          return true
+        }
+      }
+
+      false
+    };
+  }
+
+  return uploadFile => true;
+}
 
 function upload(e) {
-  uploadFile(e.target.files[0], {}).then((currentFile) => {
+  uploadFile(e.target.files[0], {
+    validate: getUploadValidator()
+  }).then((currentFile) => {
     //const fileRes = props.dataResolver(data)
     const idx = uploads.value.indexOf(currentFile)
     console.log(currentFile, idx)
@@ -81,7 +119,7 @@ function resetFile() {
   //files.value = []
 }
 function removeFile(idx) {
-  if(files.value.length > idx) {
+  if (files.value.length > idx) {
     files.value.splice(idx, 1)
   }
 }
@@ -102,9 +140,14 @@ function getPreview(file) {
   }
 
   if (file.url) {
+    const isImage = file.type ? file.type.indexOf('image/') == 0 : false
 
-    if (isImageFile(file.url)) {
-      return file.url
+    if (isImageFile(file.url) || isImage) {
+      if (file.url.indexOf('http://') == 0 || file.url.indexOf('https://') == 0) {
+        return file.url
+      }
+
+      return props.urlPrefix + file.url
     }
 
     let partials = file.url.split('?')[0].split('.');
@@ -126,11 +169,11 @@ function getPreview(file) {
 
       <a @click="removeFile(index)" v-if="file.url && !file.uploading" class="upload-remove">移除</a>
     </div>
-    <div class="upload-btn"  v-if="previewFiles.length < maxFiles">
-      <PlusCircleOutlined @click="triggerUpload"/>
+    <div class="upload-btn" v-if="previewFiles.length < maxFiles">
+      <PlusCircleOutlined @click="triggerUpload" />
     </div>
 
-    <input ref="inputRef" type="file" style="display: none" @change="upload">
+    <input ref="inputRef" type="file" style="display: none" @change="upload" :accept="accept">
   </div>
 </template>
 <style lang="scss" scoped>
