@@ -206,7 +206,7 @@ const modelStyle = computed(() => {
 
   const maxY = (vh.value - height.value - padding)
 
-  if (y.value >= maxY) {
+  if (y.value >= maxY && maxY > 0) {
     top = maxY
   }
 

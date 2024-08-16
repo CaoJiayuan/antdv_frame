@@ -2,6 +2,7 @@
 import { computed, h, ref, defineProps, defineEmits } from "vue"
 import { functions } from 'nerio-js-utils'
 const { useAsFunction } = functions
+import _ from 'lodash'
 
 import { usePanelStore } from "../index.js"
 
@@ -88,7 +89,7 @@ export function useForm(name, defaultPost = {}) {
 
   function openEdit(record) {
     openModal()
-    post.value = Object.assign({}, record)
+    post.value = _.cloneDeep(record)
   }
 
   const submitted = () => {
@@ -100,7 +101,7 @@ export function useForm(name, defaultPost = {}) {
     openModal({
       detail: true,
     })
-    post.value = Object.assign({}, record)
+    post.value = _.cloneDeep(record)
   }
 
   return {modalOpen, modalRef, openModal, openEdit, modelFormConfig, openShow, submitted, modalTitle, post, tableRef}

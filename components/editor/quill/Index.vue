@@ -2,7 +2,7 @@
 import { Quill, QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import { functions } from 'nerio-js-utils';
-import { computed, onMounted, ref, unref, useAttrs } from 'vue';
+import { computed, onMounted, ref, unref, useAttrs, watch } from 'vue';
 import { Progress } from 'ant-design-vue'
 import { useUploader } from '../../../request/uploader.js'
 import BlotFormatter from 'quill-blot-formatter'
@@ -18,7 +18,10 @@ const props = defineProps({
     type: String,
     default: () => 'upload'
   },
-  modelValue: String,
+  modelValue: {
+    type: String,
+    default: () => ''
+  },
   minHeight: {
     type: [Number, String],
     default: 200
@@ -82,6 +85,12 @@ const uploadImg = (e) => {
     });
   }
 }
+
+watch(() => props.modelValue, (nowVal) => {
+  if (quill && !props.modelValue) {
+    quill.setText('')
+  }
+})
 
 onMounted(() => {
   quill = unref(editor).getQuill()
@@ -180,10 +189,13 @@ const attrs = useAttrs()
 <style lang="scss" scoped>
 .quill-wrapper {
   position: relative;
+
   .ql-toolbar {
     border-radius: 8px 8px 0 0;
   }
+
   overflow: hidden;
+
   .upload-img {
     .ant-progress {
       position: absolute;
@@ -191,7 +203,7 @@ const attrs = useAttrs()
       top: -1px;
     }
   }
-  
+
   .quill-cover {
     width: 100%;
     height: 100%;
@@ -210,5 +222,4 @@ const attrs = useAttrs()
     border-radius: 0 0 8px 8px;
   }
 }
-
 </style>

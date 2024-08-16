@@ -82,7 +82,10 @@ const toggleUrl = computed(() => {
 })
 
 const { modalOpen, modalRef, openModal, openShow, openEdit, submitted, modelFormConfig, modalTitle, post, tableRef } = useForm(indexDef.value?.post?.name, () => {
-  return Object.assign({}, indexDef.value?.post?.default, Object.assign({}, props.postData, useAsFunction(config.value.save.default)()))
+  const postData = _.clone(props.postData)
+
+
+  return Object.assign({}, postData, _.clone(useAsFunction(config.value.save.default)()))
 })
 
 const mapsCache = ref({})
@@ -384,7 +387,7 @@ const actions = computed(() => {
       disabled: record => post.editDisabled ? useAsFunction(post.editDisabled)(record) : false
     })
   }
-  
+
 
   const del = config.value.delete
   if (del.url) {
