@@ -130,6 +130,7 @@ export function useUploader(url) {
     }).catch(error => {
       currentFile.value.error = true;
       currentFile.value.errorMsg = error.message;
+      currentFile.value.uploading = false;
       return currentFile.value
     });
   }

@@ -160,7 +160,7 @@ const initPos = computed(() => {
     return useAsFunction(props.initPosition)(offset.value)
   }
 
-  return { x: offset.value, y: 100 }
+  return { x: offset.value, y: 8 }
 })
 
 const { x, y } = useDraggable(handle, {
@@ -172,7 +172,7 @@ const openModal = (config) => {
   modalOpen.value = true
   showDetail.value = config?.detail || false
   x.value = offset.value
-  y.value = 100
+  y.value = 8
   loadHeight()
 
   return () => {

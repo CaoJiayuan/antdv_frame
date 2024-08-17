@@ -1,5 +1,5 @@
 <script setup>
-import { PlusCircleOutlined } from '@ant-design/icons-vue';
+import { PlusCircleOutlined, CloseCircleFilled } from '@ant-design/icons-vue';
 import { computed, onMounted, ref, unref, } from 'vue';
 import { useUploader } from '../../request/uploader.js'
 import _ from 'lodash'
@@ -99,9 +99,13 @@ function upload(e) {
   uploadFile(e.target.files[0], {
     validate: getUploadValidator()
   }).then((currentFile) => {
-    //const fileRes = props.dataResolver(data)
     const idx = uploads.value.indexOf(currentFile)
-    console.log(currentFile, idx)
+    if (currentFile.error) {
+      uploads.value.splice(idx, 1)
+      return
+    }
+
+    //const fileRes = props.dataResolver(data)
     if (idx > -1) {
       uploads.value.splice(idx, 1)
       files.value.push(props.dataResolver(currentFile))
@@ -122,6 +126,8 @@ function resetFile() {
 function removeFile(idx) {
   if (files.value.length > idx) {
     files.value.splice(idx, 1)
+  } else {
+    uploads.value.splice(idx - files.value.length, 1)
   }
 }
 
@@ -132,6 +138,15 @@ const previewSize = computed(() => `${s.value - 4}px`)
 onMounted(() => {
   //setFileFromUrl(unref(value))
 })
+
+
+function qualifyUrl(url) {
+  if (url.indexOf('http://') == 0 || url.indexOf('https://') == 0) {
+    return url
+  }
+
+  return props.urlPrefix + url
+}
 
 function getPreview(file) {
   // console.log(file)
@@ -144,11 +159,7 @@ function getPreview(file) {
     const isImage = file.type ? file.type.indexOf('image/') == 0 : false
 
     if (isImageFile(file.url) || isImage) {
-      if (file.url.indexOf('http://') == 0 || file.url.indexOf('https://') == 0) {
-        return file.url
-      }
-
-      return props.urlPrefix + file.url
+      return qualifyUrl(file.url)
     }
 
     let partials = file.url.split('?')[0].split('.');
@@ -159,16 +170,42 @@ function getPreview(file) {
   return null
 }
 
+
+function isImage(file) {
+
+  if (file.url) {
+    const isImage = file.type ? file.type.indexOf('image/') == 0 : false
+    return isImage || isImageFile(file.url)
+  }
+
+  return false
+}
+
+function openNew(file) {
+  if (!file.url) {
+    return
+  }
+
+
+  const a = document.createElement('a')
+  a.target = '_blank'
+  a.href = qualifyUrl(file.url)
+  a.click()
+}
+
 </script>
 <template>
   <div class="upload-wrapper">
     <div class="upload-file" v-for="(file, index) in previewFiles" :key="index">
-      <div class="upload-preview">
-        <Image :src="getPreview(file)" :style="{ maxWidth: previewSize, maxHeight: previewSize }" />
+      <div class="upload-preview cursor-pointer" @click="isImage(file) ? undefined : openNew(file)">
+        <CloseCircleFilled v-if="file.error" class="text-red-800 text-xl"/>
+        <Image :src="getPreview(file)" :preview="isImage(file)"
+          :style="{ maxWidth: previewSize, maxHeight: previewSize }" v-else/>
+        
       </div>
       <Progress type="circle" :size="s - 6" :percent="file.progress" v-if="file.uploading" />
 
-      <a @click="removeFile(index)" v-if="!readonly && file.url && !file.uploading" class="upload-remove">移除</a>
+      <a @click="removeFile(index)" v-if="!readonly && !file.uploading" class="upload-remove">移除</a>
     </div>
     <div class="upload-btn" v-if="!readonly && previewFiles.length < maxFiles">
       <PlusCircleOutlined @click="triggerUpload" />
