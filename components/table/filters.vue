@@ -7,6 +7,12 @@ const props = defineProps({
   modelValue: {
     type: Object,
   },
+  labelCol: {
+    type: Object,
+  },
+  wrapperCol: {
+    type: Object,
+  }
 })
 
 const emit = defineEmits(['update:modelValue', 'reset', 'apply'])
@@ -31,7 +37,7 @@ const resetFilters = () => {
 </script>
 <template>
   <div class="table-filters">
-    <Form ref="filterFormRef" layout="inline" :model="modelValue">
+    <Form ref="filterFormRef" layout="inline" :model="modelValue" :label-col="labelCol" :wrapper-col="wrapperCol">
       <div class="filter-fields">
         <slot name="filters" :filters="modelValue"></slot>
         <div class="filter-actions">

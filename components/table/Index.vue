@@ -87,6 +87,12 @@ const props = defineProps({
   },
   cacheKey: {
     type: String
+  },
+  filterLabelCol: {
+    type: Object,
+  },
+  filterWrapperCol: {
+    type: Object,
   }
 })
 
@@ -384,7 +390,7 @@ onMounted(() => {
 <template>
   <div>
     <Card v-if="slots.filters && dettached" style="margin-bottom: 12px;" class="filter-card">
-      <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters">
+      <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters" :label-col="filterLabelCol" :wrapper-col="filterWrapperCol">
         <template #filters="{ filters }">
           <slot name="filters" :filters="filters"></slot>
         </template>
@@ -396,7 +402,7 @@ onMounted(() => {
         <slot name="extra"></slot>
       </template>
       <template v-if="slots.filters && !dettached">
-        <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters">
+        <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters" :label-col="filterLabelCol" :wrapper-col="filterWrapperCol">
           <template #filters="{ filters }">
             <slot name="filters" :filters="filters"></slot>
           </template>

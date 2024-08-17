@@ -432,7 +432,7 @@ const slots = useSlots()
   </Card>
   <Table v-else :action-width="indexDef.actionWidth" :init-filters="initFilters" :sort="indexDef.sort"
     :buttons="buttons" ref="tableRef" :columns="columns" :actions="actions" :search-data="config.query.data"
-    :api-url="config.query.url" @loaded="onLoaded">
+    :api-url="config.query.url" @loaded="onLoaded" :filter-label-col="config.query.filterLabelCol" :filter-wrapper-col="config.query.filterWrapperCol">
     <template #[item]="data" v-for="item in colSlots" :key="item">
       <slot :name="item" v-bind="data"></slot>
     </template>

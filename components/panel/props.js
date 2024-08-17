@@ -10,7 +10,9 @@ export const defaultAdapter = {
       detailUrl: indexDef.detailUrl,
       after(res, indexProps) {
 
-      }
+      },
+      filterLabelCol: indexDef.filterLabelCol,
+      filterWrapperCol: indexDef.filterWrapperCol
     }
   },
   save(indexDef, props, state) {
