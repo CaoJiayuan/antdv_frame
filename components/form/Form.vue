@@ -28,6 +28,9 @@ const props = defineProps({
   },
   disabled: {
     type: Boolean,
+  },
+  readonly: {
+    type: Boolean,
   }
 })
 
