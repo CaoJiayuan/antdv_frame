@@ -65,6 +65,7 @@ const indexDef = computed(() => {
 
 const propsState = ref(indexDef.value?.props || [])
 const adapterState = ref({})
+const renderTime = ref(0)
 
 const config = computed(() => {
   const adapter = usePanelAdapterStore().getAdapter(indexDef.value?.adapter || 'default')
@@ -174,6 +175,7 @@ function onLoaded(res, req) {
 
 
 const columns = computed(() => {
+  renderTime.value++
   return propsState.value.filter(item => {
     return !item.exclude
   }).map(column => {
@@ -221,7 +223,9 @@ const columns = computed(() => {
 
 // 过滤列
 const filterCols = computed(() => {
-  return propsState.value.filter(item => item.filter || item.filterRender).map(item => {
+  return propsState.value.filter(item => item.filter || item.filterRender).map(itemProp => {
+
+    const item = _.clone(itemProp)
 
     item.filterName = item.filterName || item.dataIndex
 
@@ -261,8 +265,8 @@ const filterCols = computed(() => {
 
 // 表单列
 const formCols = computed(() => {
-  return propsState.value.filter(item => item.form || item.formSlot).map(item => {
-
+  return propsState.value.filter(item => item.form || item.formSlot).map(itemProp => {
+    const item = _.clone(itemProp)
     item.formIf = item.formIf || (() => true)
     item.formName = item.formName || item.dataIndex
     item.mapIndex = item.mapIndex || item.dataIndex
@@ -310,7 +314,7 @@ const initFilters = computed(() => {
 
 // 按钮
 const buttons = computed(() => {
-  const defBtns = (indexDef.value.buttons || [])
+  const defBtns = _.clone(indexDef.value.buttons || [])
   const save = config.value.save
 
   if (save.url) {

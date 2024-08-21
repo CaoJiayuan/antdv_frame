@@ -2,6 +2,8 @@ import _ from 'lodash'
 import { fmtDatetime } from '../../utils/date.js'
 
 import { functions } from 'nerio-js-utils'
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
 const { useAsFunction } = functions
 
@@ -9,36 +11,43 @@ function echo(val) {
   return val
 }
 
-const resolvers = {
-  join(val, s = ',') {
-    if (!val) {
-      return ''
-    }
-    try {
-      return val.join(s)
-    } catch (e) {
+export const usePanelResoverStore = defineStore('panelResover', () => {
+  const resolvers = ref({
+    join(val, s = ',') {
+      if (!val) {
+        return ''
+      }
+      try {
+        return val.join(s)
+      } catch (e) {
+        return val
+      }
+    },
+    echo,
+    fmtdt: fmtDatetime,
+    emptyn(val) {
+      if (val == 'null') {
+        return ''
+      }
       return val
+    },
+    extact(val, key) {
+      return _.get(val, key.split('.'))
+    },
+    mapkv(val, key, valkey) {
+      return val.reduce((res, item) => {
+        res[item[key]] = item[valkey]
+        return res
+      }, {})
     }
-  },
-  echo,
-  fmtdt: fmtDatetime,
-  emptyn(val) {
-    if (val == 'null') {
-      return ''
-    }
-    return val
-  },
-  extact(val, key) {
-    return _.get(val, key.split('.'))
-  },
-  mapkv(val, key, valkey) {
-    return val.reduce((res, item) => {
-      res[item[key]] = item[valkey]
-      return res
-    }, {})
-  }
-}
+  })
 
+  function withResolver(name, fn) {
+    resolvers.value[name] = useAsFunction(fn)
+  }
+
+  return { resolvers, withResolver }
+})
 
 function extractValue(data, str, prop, ...args) {
   if (typeof str != 'string') {
@@ -103,60 +112,62 @@ function extractValue(data, str, prop, ...args) {
 }
 
 
-function parseFnString(record, fnString, prop, ...args) {
-  if (typeof fnString == 'function') {
-    return [
-      {
-        fn: fnString,
-        args: args
-      }
-    ]
-  }
+export function useResolver() {
 
-  if (typeof fnString != 'string') {
-    return [
-      {
-        fn: echo,
-        args: [fnString]
-      }
-    ]
-  }
+  const { resolvers, withResolver } = usePanelResoverStore()
 
-  const parts = fnString.split('|')
 
-  return parts.map(part => {
-    const fnDefine = part.split(':')
-
-    const fn = resolvers[fnDefine[0]]
-
-    if (!fn) {
-      return {
-        fn: echo,
-        args: [`function string [${part}] parse error, invalid function ${fnDefine[0]}`]
-      }
-    }
-
-    let args = []
-
-    if (fnDefine.length > 1) {
-      args = fnDefine[1].split(',').map(arg => {
-        if (_.startsWith(arg, '$')) {
-          return extractValue(record, arg, prop, ...args)
+  function parseFnString(record, fnString, prop, ...args) {
+    if (typeof fnString == 'function') {
+      return [
+        {
+          fn: fnString,
+          args: args
         }
-
-        return arg
-      })
+      ]
     }
 
-    return {
-      fn,
-      args
+    if (typeof fnString != 'string') {
+      return [
+        {
+          fn: echo,
+          args: [fnString]
+        }
+      ]
     }
-  })
-}
 
+    const parts = fnString.split('|')
 
-export function useResolver(mapRef) {
+    return parts.map(part => {
+      const fnDefine = part.split(':')
+
+      const fn = resolvers[fnDefine[0]]
+
+      if (!fn) {
+        return {
+          fn: echo,
+          args: [`function string [${part}] parse error, invalid function ${fnDefine[0]}`]
+        }
+      }
+
+      let args = []
+
+      if (fnDefine.length > 1) {
+        args = fnDefine[1].split(',').map(arg => {
+          if (_.startsWith(arg, '$')) {
+            return extractValue(record, arg, prop, ...args)
+          }
+
+          return arg
+        })
+      }
+
+      return {
+        fn,
+        args
+      }
+    })
+  }
 
   function callfnMap(list, fnString, prop, ...args) {
     parseFnString(list, fnString, prop, ...args)
@@ -185,10 +196,5 @@ export function useResolver(mapRef) {
     }, val)
   }
 
-  function withResolver(name, fn) {
-    resolvers[name] = useAsFunction(fn)
-  }
-  
-
-  return { resolvers, parseFnString, callfn, callfnMap, withResolver}
+  return { resolvers, parseFnString, callfn, callfnMap, withResolver }
 }
