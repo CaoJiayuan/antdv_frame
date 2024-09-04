@@ -110,7 +110,7 @@ const mapArray = computed(() => {
       res[key] = []
       for (let k in map) {
         res[key].push({
-          value: isNaN(k) ? k : parseInt(k),
+          value: (isNaN(k) || k.length > 16) ? k : parseInt(k),
           text: map[k]
         })
       }

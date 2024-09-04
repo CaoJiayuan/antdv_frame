@@ -5,6 +5,7 @@ import { useRequest, useRequestStore, withUploadDriver } from './request';
 
 import PanelTable from './components/panel/Table.vue'
 import Table from './components/table/Index.vue';
+import PanelForm from './components/panel/Form.vue';
 import UploadFile from './components/upload/file.vue';
 import AntSelect from './components/select/AntSelect.vue';
 import Form from './components/form/Form.vue';
@@ -23,6 +24,7 @@ export {
   withUploadDriver,
   usePanelAdapterStore,
   PanelTable,
+  PanelForm,
   Table,
   UploadFile,
   AntSelect,

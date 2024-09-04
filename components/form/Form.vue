@@ -1,5 +1,5 @@
 <script setup>
-import { Form, Button } from 'ant-design-vue'
+import { Form, Button, message } from 'ant-design-vue'
 import { computed, ref } from 'vue'
 import {getRequest} from '../../request'
 const request = getRequest()
@@ -18,7 +18,7 @@ const props = defineProps({
   },
   wrapperCol: {
     type: Object,
-    default: () => ({ span: 14 })
+    default: () => ({ span: 19 })
   },
   rules: Object,
   width: String | Number,
@@ -26,12 +26,26 @@ const props = defineProps({
     type: String,
     default: () => "保存"
   },
+  successMsg: {
+    type: String,
+    default: () => "保存成功"
+  },
+  method: {
+    type: String,
+    default: () => "post"
+  },
   disabled: {
     type: Boolean,
   },
   readonly: {
     type: Boolean,
-  }
+  },
+  dataResolver: {
+    type: Function,
+    default: data => {
+      return data
+    }
+  },
 })
 
 
@@ -47,11 +61,14 @@ const onSubmit = () => {
   loading.value = true
   request({
     url: props.apiUrl,
-    method: 'post',
-    data: formState.value
+    method: props.method,
+    data: props.dataResolver(formState.value)
   }).then(res => {
     loading.value = false
+    message.info(props.successMsg)
     emit('submitted', formState)
+  }).catch((e) => {
+    loading.value = false
   })
 };
 
@@ -74,7 +91,7 @@ defineExpose({resetForm})
     :wrapper-col="wrapperCol">
     <slot></slot>
     <div class="form-actions" v-if="!readonly">
-      <Button type="primary" html-type="submit">{{ okText }}</Button>
+      <Button type="primary" html-type="submit" v-bind="okBtnProps">{{ okText }}</Button>
       <Button @click="resetForm">重置</Button>
     </div>
   </Form>
