@@ -56,7 +56,7 @@ const indexDef = computed(() => {
     return {}
   }
 
-  const def = indexFn() || {}
+  const def = indexFn(props) || {}
   if (def.filterNoCol === undefined) {
     def.filterNoCol = true
   }
