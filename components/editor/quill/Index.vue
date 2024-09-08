@@ -5,7 +5,7 @@ import { functions } from 'nerio-js-utils';
 import { computed, onMounted, ref, unref, useAttrs, watch } from 'vue';
 import { Progress } from 'ant-design-vue'
 import { useUploader } from '../../../request/uploader.js'
-import BlotFormatter from 'quill-blot-formatter'
+import BlotFormatter from 'quill-blot-formatter/dist/BlotFormatter'
 const { fastRandom } = functions;
 const toolbarId = computed(() => {
   return 'quill-tb-' + fastRandom()

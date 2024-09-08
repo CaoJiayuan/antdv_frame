@@ -12,7 +12,8 @@ export const defaultAdapter = {
 
       },
       filterLabelCol: indexDef.filterLabelCol,
-      filterWrapperCol: indexDef.filterWrapperCol
+      filterWrapperCol: indexDef.filterWrapperCol,
+      noDetail: indexDef.noDetail
     }
   },
   save(indexDef, props, state) {
@@ -41,7 +42,8 @@ export const defaultAdapter = {
     return {
       url: indexDef.toggleUrl,
       valueResover: value => value,
-      dataResolver: (checked, record) => ({})
+      dataResolver: (checked, record) => ({}),
+      disabled: indexDef.toggle?.disabled
     }
   }
 }

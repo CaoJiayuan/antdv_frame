@@ -45,7 +45,8 @@ const props = defineProps({
   disabledFilters: {
     type: Array,
     default: () => []
-  }
+  },
+  debug: Boolean
 })
 const indexFn = getIndex(props.index)
 
@@ -192,8 +193,9 @@ const columns = computed(() => {
 
       if (column.dataType == 'datetime' && !column.resolver) {
         col.customRender = ({ text }) => fmtDatetime(text)
+      } else if (column.dataType == 'date' && !column.resolver) {
+        col.customRender = ({ text }) => fmtDatetime(text, 'YYYY-MM-DD')
       } else if (column.dataType == 'toggle' && toggle.url) {
-
         col.customRender = ({ text, record }) => {
           return h(Switch, {
             checked: toggle.valueResover ? toggle.valueResover(text, record, col) : text,
@@ -208,7 +210,6 @@ const columns = computed(() => {
         }
       } else if (column.dataType == 'map') {
         col.customRender = ({ text, record }) => {
-
           return h('span', {}, mapsCache.value[column.mapIndex || column.dataIndex]?.[text] || text)
         }
       } else {
@@ -437,6 +438,17 @@ const slots = useSlots()
   <Table v-else :action-width="indexDef.actionWidth" :init-filters="initFilters" :sort="indexDef.sort"
     :buttons="buttons" ref="tableRef" :columns="columns" :actions="actions" :search-data="config.query.data"
     :api-url="config.query.url" @loaded="onLoaded" :filter-label-col="config.query.filterLabelCol" :filter-wrapper-col="config.query.filterWrapperCol">
+<div v-if="debug" class="mt-2">
+<pre>
+render time: {{ renderTime }}
+________________________
+maps:
+{{ mapsCache }}
+________________________
+config:
+{{ config }}
+</pre>  
+</div>
     <template #[item]="data" v-for="item in colSlots" :key="item">
       <slot :name="item" v-bind="data"></slot>
     </template>
@@ -482,6 +494,7 @@ const slots = useSlots()
       </FormItem>
       </Col>
     </template>
+
   </Table>
 </template>
 
