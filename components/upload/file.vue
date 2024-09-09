@@ -3,7 +3,10 @@ import { PlusCircleOutlined, CloseCircleFilled } from '@ant-design/icons-vue';
 import { computed, onMounted, ref, unref, } from 'vue';
 import { useUploader } from '../../request/uploader.js'
 import _ from 'lodash'
-import { Progress, Image } from 'ant-design-vue'
+import { Progress, Image, Modal } from 'ant-design-vue'
+
+import Video from '../Video.vue';
+import { attachTypeApi } from 'ant-design-vue/es/message';
 const widthMap = {
   small: 32,
   middle: 64
@@ -29,7 +32,7 @@ const props = defineProps({
     }
   },
   modelValue: {
-    type: Array,
+    type: [Array, String],
     default: () => []
   },
   maxFiles: {
@@ -44,9 +47,19 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  readonly: Boolean
+  readonly: Boolean,
+  previewWidth: {
+    type: String,
+    default: "660px"
+  }
 })
 
+const isSingle = computed(() => {
+  return !Array.isArray(props.modelValue)
+})
+
+const previewOpen = ref(false)
+const currentPreviewFile = ref({})
 
 const inputRef = ref()
 
@@ -62,10 +75,22 @@ const files = computed({
 })
 
 const previewFiles = computed(() => {
+  if (isSingle.value) {
+    var f = []
+    if (files.value) {
+      f.push({
+        url: files.value
+      })
+    }
+
+    return f.concat(uploads.value)
+  }
+
   const fs = _.clone(files.value)
 
   return fs.concat(uploads.value)
 })
+
 function getUploadValidator() {
   if (props.validator) {
     return props.validator;
@@ -108,7 +133,11 @@ function upload(e) {
     //const fileRes = props.dataResolver(data)
     if (idx > -1) {
       uploads.value.splice(idx, 1)
-      files.value.push(props.dataResolver(currentFile))
+      if (isSingle.value) {
+        files.value = currentFile.url
+      } else {
+        files.value.push(props.dataResolver(currentFile))
+      }
     }
     resetFile()
   })
@@ -124,6 +153,11 @@ function resetFile() {
   //files.value = []
 }
 function removeFile(idx) {
+  if (isSingle.value) {
+    files.value = null
+    return
+  }
+
   if (files.value.length > idx) {
     files.value.splice(idx, 1)
   } else {
@@ -181,6 +215,20 @@ function isImage(file) {
   return false
 }
 
+function isVideo(file) {
+
+  if (file.url) {
+    let partials = file.url.split('?')[0].split('.');
+
+    let ext = partials[partials.length - 1];
+    if (['mp4', 'webm', 'ogg', 'ogv', 'mov', 'mkv', 'flv', 'avi', 'wmv', 'rmvb', 'rm'].indexOf(ext) > -1) {
+      return true
+    }
+  }
+
+  return false
+}
+
 function openNew(file) {
   if (!file.url) {
     return
@@ -193,32 +241,51 @@ function openNew(file) {
   a.click()
 }
 
+function previewFile(file) {
+  if (!isImage(file)) {
+
+    if (isVideo(file)) {
+      currentPreviewFile.value = file
+      previewOpen.value = true
+    } else {
+      openNew(file)
+    }
+  }
+}
+
 </script>
 <template>
   <div class="upload-wrapper">
     <div class="upload-file" v-for="(file, index) in previewFiles" :key="index">
-      <div class="upload-preview cursor-pointer" @click="isImage(file) ? undefined : openNew(file)">
-        <CloseCircleFilled v-if="file.error" class="text-red-800 text-xl"/>
+      <div class="upload-preview cursor-pointer" @click="previewFile(file)" title="点击预览">
+        <CloseCircleFilled v-if="file.error" class="text-red-800 text-xl" />
         <Image :src="getPreview(file)" :preview="isImage(file)"
-          :style="{ maxWidth: previewSize, maxHeight: previewSize }" v-else/>
-        
+          :style="{ maxWidth: previewSize, maxHeight: previewSize }" v-else />
+
       </div>
       <Progress type="circle" :size="s - 6" :percent="file.progress" v-if="file.uploading" />
 
       <a @click="removeFile(index)" v-if="!readonly && !file.uploading" class="upload-remove">移除</a>
     </div>
-    <div class="upload-btn" v-if="!readonly && previewFiles.length < maxFiles">
+    <div class="upload-btn"
+      v-if="!readonly && previewFiles.length < maxFiles && (!isSingle || previewFiles.length == 0)">
       <PlusCircleOutlined @click="triggerUpload" />
     </div>
 
     <input ref="inputRef" type="file" style="display: none" @change="upload" :accept="accept">
+    <Modal v-model:open="previewOpen" title="预览" :footer="null" :width="previewWidth" class="uploader-preview">
+      <Video :src="currentPreviewFile.url" v-if="isVideo(currentPreviewFile)"></Video>
+    </Modal>
   </div>
 </template>
 <style lang="scss" scoped>
+
+
 .upload-wrapper {
   position: relative;
   display: flex;
   gap: 4px;
+
 
   .upload-file {
     position: relative;
@@ -295,6 +362,15 @@ function openNew(file) {
 
     .ant-progress-text {
       color: white;
+    }
+  }
+}
+
+.uploader-preview {
+  .ant-modal-content {
+    padding: 12px 6px 6px;
+    .ant-modal-title {
+      text-align: center;
     }
   }
 }

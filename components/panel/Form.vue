@@ -1,5 +1,5 @@
 <script setup>
-import { Col, Row, FormItem } from 'ant-design-vue'
+import { Col, Row, FormItem, Divider } from 'ant-design-vue'
 import Form from '../form/Form.vue'
 import { usePanelStore } from "./index.js"
 const { hasFormComponent } = usePanelStore()
@@ -61,7 +61,11 @@ const model = computed({
   <Form v-model:model="model">
     <Row :gutter="[12, 0]">
       <template v-for="field in fmtFields" :key="field.name">
-        <Col v-bind="field.col || { span: 24 }">
+        <Divider v-if="field.type == 'divider'" v-bind="field.props">
+          {{ field.title }}
+        </Divider>
+
+        <Col v-bind="field.col || { span: 24 }" v-else>
         <FormItem :name="field.name" :label="field.hideTitle ? undefined : field.title" :rules="field.rules"
           :help="useAsFunction(field.help)(model)" v-if="field.if(model, detail)"
           :wrapperCol="field.wrapperCol || undefined" :label-col="field.labelCol || undefined">
