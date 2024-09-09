@@ -46,6 +46,10 @@ const props = defineProps({
       return data
     }
   },
+  reset: {
+    type: Boolean,
+    default: () => true
+  }
 })
 
 
@@ -92,7 +96,7 @@ defineExpose({resetForm})
     <slot></slot>
     <div class="form-actions" v-if="!readonly">
       <Button type="primary" html-type="submit" v-bind="okBtnProps">{{ okText }}</Button>
-      <Button @click="resetForm">重置</Button>
+      <Button @click="resetForm" v-if="reset">重置</Button>
     </div>
   </Form>
 </template>
