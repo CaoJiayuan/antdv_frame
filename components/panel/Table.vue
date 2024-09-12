@@ -106,12 +106,15 @@ withResolver("map", (val, prop) => {
 
 const mapArray = computed(() => {
   return Object.keys(mapsCache.value).reduce((res, key) => {
+    const mt = indexDef.value.mapsType || {}
+    let isString = mt[key] == 'string'
+
     const map = mapsCache.value[key]
     if (map) {
       res[key] = []
       for (let k in map) {
         res[key].push({
-          value: (isNaN(k) || k.length > 16) ? k : parseInt(k),
+          value: (isString || isNaN(k) || k.length > 16) ? k : parseInt(k),
           text: map[k]
         })
       }

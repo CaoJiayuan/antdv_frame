@@ -93,6 +93,9 @@ const props = defineProps({
   },
   filterWrapperCol: {
     type: Object,
+  },
+  tableData: {
+    type: [Array, Promise],
   }
 })
 
