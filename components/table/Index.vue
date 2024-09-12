@@ -99,6 +99,8 @@ const props = defineProps({
   }
 })
 
+const staticData = computed(() => !!props.tableData)
+
 const emit = defineEmits(['loaded', 'update:modelValue', 'resetFilter'])
 const filters = ref(Object.assign({}, useAsFunction(props.initFilters)()))
 const filterFormRef = ref()
@@ -151,9 +153,31 @@ function cacheTableData(data) {
 }
 
 
-const { loading, meta, data: dataSource, paginate, withoutPage, latency } = usePagination(emit)
+const { loading, meta, data: pageData, paginate, withoutPage, latency } = usePagination(emit)
+
+const tableDataValue = ref([])
+
+
+function loadStaticData() {
+  Promise.resolve(props.tableData).then(resp => {
+    tableDataValue.value = resp
+  })
+}
+
+
+const dataSource = computed(() => {
+  if (staticData.value) {
+    return tableDataValue.value
+  }
+
+  return pageData.value
+})
 
 const refresh = (data = {}) => {
+  if (staticData.value) {
+    loadStaticData()
+    return
+  }
   const cache = cacheTableData()
   //console.log(filters.value, cache.filters)
   filters.value = Object.assign({}, filters.value, cache.filters)
@@ -182,7 +206,7 @@ watch(() => props.searchData, (now, _old) => {
 })
 
 const pagination = computed(() => {
-  if (withoutPage.value) {
+  if (withoutPage.value || staticData.value) {
     return false
   }
 

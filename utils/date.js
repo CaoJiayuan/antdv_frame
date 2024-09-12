@@ -26,5 +26,9 @@ export function dateFormat(fmt = 'yyyy-mm-dd HH:MM:ss', date = null) {
 }
 
 export function fmtDatetime(val, fmt = 'YYYY-MM-DD HH:mm:ss') {
+  if (!val) {
+    return ''
+  }
+
   return dayjs(val).format(fmt)
 }
