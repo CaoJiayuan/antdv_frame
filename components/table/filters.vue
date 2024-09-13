@@ -60,6 +60,9 @@ const resetFilters = () => {
     flex-wrap: wrap;
     row-gap: 8px;
     width: 100%;
+    :deep(.ant-form-item-label) {
+      font-weight: 600;
+    }
   }
 
   .filter-actions {

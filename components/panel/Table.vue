@@ -6,7 +6,7 @@ const request = getRequest()
 import { FormItem, Col, Row, message, Switch, Card } from 'ant-design-vue'
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons-vue'
 import ModalForm from '../form/ModalForm.vue'
-import { computed, h, onMounted, ref, useSlots } from 'vue'
+import { computed, h, nextTick, onMounted, ref, useSlots } from 'vue'
 import { fmtDatetime } from '../../utils/date.js'
 import { replaceParams } from '../../utils/functions.js'
 import { functions } from 'nerio-js-utils'
@@ -169,7 +169,7 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow'])
+const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow', 'beforeSave'])
 
 function onLoaded(res, req) {
   emit('loaded', res, req)
@@ -325,7 +325,14 @@ const buttons = computed(() => {
     return [
       {
         title: '新增',
-        action: () => openModal(),
+        action: () => {
+
+          openModal()
+
+          nextTick(() => {
+            emit('beforeSave', {}, post.value)
+          })
+        },
         icon: h(PlusCircleOutlined),
         disabled: () => save.disabled
       },
@@ -346,7 +353,7 @@ const refreshTable = (data = {}) => {
 const actions = computed(() => {
   const defActs = (indexDef.value.actions || [])
   const extra = []
-  const post = config.value.save
+  const save = config.value.save
   const showActionTitle = indexDef.value.showActionTitle == undefined ? true : indexDef.value.showActionTitle
   const query = config.value.query
 
@@ -373,11 +380,11 @@ const actions = computed(() => {
         }
       },
       icon: h(EyeOutlined),
-      disabled: record => query.detailDisabled ? useAsFunction(post.detailDisabled)(record) : false
+      disabled: record => query.detailDisabled ? useAsFunction(save.detailDisabled)(record) : false
     })
   }
 
-  if (post.url && !post.noEdit) {
+  if (save.url && !save.noEdit) {
     extra.push({
       title: showActionTitle ? '编辑' : '',
       action: (record) => {
@@ -385,14 +392,20 @@ const actions = computed(() => {
           loadDetail(record).then(data => {
             emit('beforeEdit', data)
             openEdit(data)
+            nextTick(() => {
+              emit('beforeSave', {}, post.value)
+            })
           })
         } else {
           emit('beforeEdit', record)
           openEdit(record)
+          nextTick(() => {
+            emit('beforeSave', {}, post.value)
+          })
         }
       },
       icon: h(EditOutlined),
-      disabled: record => post.editDisabled ? useAsFunction(post.editDisabled)(record) : false
+      disabled: record => save.editDisabled ? useAsFunction(save.editDisabled)(record) : false
     })
   }
 
@@ -440,9 +453,10 @@ const slots = useSlots()
   </Card>
   <Table v-else :action-width="indexDef.actionWidth" :init-filters="initFilters" :sort="indexDef.sort"
     :buttons="buttons" ref="tableRef" :columns="columns" :actions="actions" :search-data="config.query.data"
-    :api-url="config.query.url" @loaded="onLoaded" :filter-label-col="config.query.filterLabelCol" :filter-wrapper-col="config.query.filterWrapperCol">
-<div v-if="debug" class="mt-2">
-<pre>
+    :api-url="config.query.url" @loaded="onLoaded" :filter-label-col="config.query.filterLabelCol"
+    :filter-wrapper-col="config.query.filterWrapperCol">
+    <div v-if="debug" class="mt-2">
+      <pre>
 render time: {{ renderTime }}
 ________________________
 maps:
@@ -450,8 +464,8 @@ maps:
 ________________________
 config:
 {{ config }}
-</pre>  
-</div>
+</pre>
+    </div>
     <template #[item]="data" v-for="item in colSlots" :key="item">
       <slot :name="item" v-bind="data"></slot>
     </template>

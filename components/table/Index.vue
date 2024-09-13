@@ -8,13 +8,13 @@ import _ from 'lodash'
 import { functions } from 'nerio-js-utils'
 import { useRoute } from 'vue-router';
 import Filters from './filters.vue'
+import { readonly } from 'vue';
 
 const { useAsFunction } = functions
 
 const props = defineProps({
   apiUrl: {
     type: String,
-    required: true
   },
   columns: {
     type: Array,
@@ -96,10 +96,26 @@ const props = defineProps({
   },
   tableData: {
     type: [Array, Promise],
+  },
+  size: {
+    type: String,
+    default: () => 'middle'
+  },
+  bordered: {
+    type: Boolean,
+  },
+  readonly: {
+    type: Boolean,
+    default: () => false
+  },
+  dense: {
+    type: Boolean,
   }
 })
 
 const staticData = computed(() => !!props.tableData)
+
+const readonlyState = computed(() => props.readonly)
 
 const emit = defineEmits(['loaded', 'update:modelValue', 'resetFilter'])
 const filters = ref(Object.assign({}, useAsFunction(props.initFilters)()))
@@ -120,7 +136,6 @@ const sortState = ref(Object.assign({}, useAsFunction(props.sort)()))
 const autoRefreshRef = ref(props.autoRefresh)
 
 const refreshInterval = props.refreshInterval || 3000
-
 
 const route = useRoute()
 
@@ -163,6 +178,12 @@ function loadStaticData() {
     tableDataValue.value = resp
   })
 }
+
+watch(() => props.tableData, now => {
+  if (now) {
+    loadStaticData()
+  }
+})
 
 
 const dataSource = computed(() => {
@@ -238,6 +259,7 @@ const rowSelection = computed(() => {
         }
       }
     }
+
     return {
       type: isArr ? 'checkbox' : 'radio',
       selectedRowKeys: srowKeys,
@@ -295,7 +317,7 @@ const formatColumns = computed(() => {
   const columns = columnsState.value.filter((col, index) => {
     return showState.value[index]
   })
-  if (actions.length > 0) {
+  if (actions.length > 0 && !props.readonly) {
     columns.push({
       key: 'action',
       actions: actions.map(action => {
@@ -416,14 +438,14 @@ onMounted(() => {
 
 <template>
   <div>
-    <Card v-if="slots.filters && dettached" style="margin-bottom: 12px;" class="filter-card">
+    <Card v-if="slots.filters && dettached" style="margin-bottom: 12px;" class="filter-card" :bordered="bordered" size="small">
       <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters" :label-col="filterLabelCol" :wrapper-col="filterWrapperCol">
         <template #filters="{ filters }">
           <slot name="filters" :filters="filters"></slot>
         </template>
       </Filters>
     </Card>
-    <Card :title="title" :bordered="false" class="table-card">
+    <Card :title="title" :bordered="bordered" class="table-card" :class="{dense: dense}" size="small">
 
       <template #extra>
         <slot name="extra"></slot>
@@ -437,7 +459,7 @@ onMounted(() => {
         <Divider />
       </template>
 
-      <div class="table-btns">
+      <div class="table-btns" v-if="!readonlyState">
         <div>
           <Button :type="btn.type" :key="idx" v-for="(btn, idx) in formatButtons" @click="btn.onClick" :icon="btn.icon"
             :size="btn.size" :disabled="btn.disabled()">{{ btn.title }}</Button>
@@ -471,7 +493,7 @@ onMounted(() => {
 
       <Table @change="handleTableChange" :expand-column-width="100" :columns="formatColumns" :data-source="dataSource"
         :loading="loading" :pagination="pagination" :row-selection="rowSelection" :scroll="scroll" v-bind="attrs"
-        bordered size="middle">
+        bordered :size="size">
 
         <template #bodyCell="{ column, record }">
           <template v-if="column && column.key === 'action'">
@@ -533,6 +555,19 @@ onMounted(() => {
 
 .table-action-btn.ant-btn-sm {
   font-size: 13px;
+}
+.filter-card,.table-card {
+  :deep(.ant-card-body) {
+    padding: 8px;
+  }
+  &.dense {
+    :deep(.ant-card-body) {
+      padding: 0;
+    }
+  }
+  :deep(.ant-pagination) {
+    padding-right: 8px;
+  }
 }
 </style>
 

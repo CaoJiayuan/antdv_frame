@@ -1,13 +1,17 @@
 <script setup>
 import { Modal } from 'ant-design-vue'
 import PanelTable from './Table.vue'
-import { computed, ref } from 'vue'
+import { computed, ref, useAttrs } from 'vue'
 
 const props = defineProps({
   modelValue: {
     type: [Object, Array],
   },
   open: Boolean,
+  title: {
+    type: String,
+    default: '选择'
+  }
 })
 const tableRef = ref()
 const emit = defineEmits(['update:modelValue', 'update:open', 'selected'])
@@ -46,10 +50,19 @@ const attrs = useAttrs()
 </script>
 <template>
   <div>
-    <Modal v-model:open="modalOpen" width="80%" :title="title" :mask-closable="false" @cancel="modalOpen = false" @ok="emitSelected">
-     <PanelTable v-bind="attrs" ref="tableRef" v-model="value" :scroll="{ x: 1000, y: '45vh' }"></PanelTable>
+    <Modal v-model:open="modalOpen" width="80%" :title="title" :mask-closable="false" @cancel="modalOpen = false"
+      @ok="emitSelected" class="table-select-modal">
+      <PanelTable v-bind="attrs" ref="tableRef" v-model="value" :scroll="{ x: 1000, y: '45vh' }" readonly dense bordered></PanelTable>
     </Modal>
   </div>
 </template>
-<style lang="scss" scoped>
+<style lang="scss">
+.table-select-modal {
+  .ant-modal-content {
+    padding: 12px;
+    .ant-modal-close {
+      top: 12px;
+    }
+  }
+}
 </style>
