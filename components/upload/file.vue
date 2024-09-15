@@ -9,7 +9,10 @@ import Video from '../Video.vue';
 import { attachTypeApi } from 'ant-design-vue/es/message';
 const widthMap = {
   small: 32,
-  middle: 64
+  middle: 64,
+  large: 128,
+  xl: 192,
+  xxl: 256
 }
 
 const emit = defineEmits(['update:modelValue'])
