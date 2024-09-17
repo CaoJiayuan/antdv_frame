@@ -18,7 +18,7 @@ import { useForm, renderFormComponent, renderFilterComponent } from './form'
 import { usePanelStore } from "./index.js"
 
 
-const { hasFormComponent, hasFilterComponent, getIndex, hasIndex } = usePanelStore()
+const { hasFormComponent, hasFilterComponent, getIndex, hasIndex, hasCellRender, getCellRender } = usePanelStore()
 
 const props = defineProps({
   index: {
@@ -189,7 +189,7 @@ const columns = computed(() => {
     if (col.customRender) {
       const render = column.customRender
       col.customRender = (data) => {
-        return render(data, emit)
+        return render(data, emit, _.clone(col.props) || {})
       }
     } else {
       const toggle = config.value.toggle || {}
@@ -216,8 +216,24 @@ const columns = computed(() => {
           return h('span', {}, mapsCache.value[column.mapIndex || column.dataIndex]?.[text] || text)
         }
       } else {
-        col.customRender = ({ text, record }) => {
-          return callfn(record, text, resolver, column.dataIndex)
+        if (hasCellRender(column.dataType)) {
+          const fn = getCellRender(column.dataType)
+          const props = Object.assign({}, useAsFunction(col.props)(col, mapsCache.value), {
+            maps: mapsCache.value
+          })
+
+          col.customRender = ({ text, record }) => {
+            const txt = callfn(record, text, resolver, column.dataIndex)
+            return fn({
+              text: txt,
+              record,
+              column: col,
+            }, emit, props)
+          }
+        } else {
+          col.customRender = ({ text, record }) => {
+            return callfn(record, text, resolver, column.dataIndex)
+          }
         }
       }
     }
@@ -324,7 +340,7 @@ const buttons = computed(() => {
   if (save.url) {
     return [
       {
-        title: '新增',
+        title: save.addTitle || '新增',
         action: () => {
 
           openModal()
@@ -461,6 +477,8 @@ render time: {{ renderTime }}
 ________________________
 maps:
 {{ mapsCache }}
+------
+{{ mapArray }}
 ________________________
 config:
 {{ config }}

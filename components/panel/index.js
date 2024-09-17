@@ -10,6 +10,8 @@ export const usePanelStore = defineStore('panel', () => {
 
   const filterComponents = ref({})
 
+  const cellRenders = ref({})
+
   function registerFormComponent(key, fn) {
     formComponents.value[key] = fn
   }
@@ -46,6 +48,19 @@ export const usePanelStore = defineStore('panel', () => {
     return Object.keys(indices.value).indexOf(name) > -1
   }
 
+
+  function hasCellRender(key) {
+    return Object.keys(cellRenders.value).indexOf(key) > -1
+  }
+
+  function registerCellRender(key, fn) {
+    cellRenders.value[key] = fn
+  }
+
+  function getCellRender(key) {
+    return cellRenders.value[key]
+  }
+
   return {
     formComponents,
     filterComponents,
@@ -58,6 +73,9 @@ export const usePanelStore = defineStore('panel', () => {
     hasFilterComponent,
     getIndex,
     hasIndex,
-    withIndex
+    withIndex,
+    registerCellRender,
+    getCellRender,
+    hasCellRender
   }
 })

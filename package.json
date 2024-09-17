@@ -1,6 +1,6 @@
 {
   "name": "nerio-antdv-frame",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "antdv web framework",
   "main": "index.js",
   "scripts": {
