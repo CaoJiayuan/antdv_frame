@@ -57,7 +57,7 @@ export function renderFilterComponent(key, post, field, props) {
 export function useForm(name, defaultPost = {}) {
 
   const modalOpen = ref(false)
-  const post = ref({})
+  const post = ref(useAsFunction(defaultPost)())
 
   const tableRef = ref()
   const modalRef = ref()

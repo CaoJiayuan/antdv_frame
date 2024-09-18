@@ -365,6 +365,11 @@ const refreshTable = (data = {}) => {
   tableRef.value && tableRef.value.refresh(data)
 }
 
+const showDetail = computed(() => {
+  const query = config.value.query
+
+  return query.url && !query.noDetail
+})
 // 操作列
 const actions = computed(() => {
   const defActs = (indexDef.value.actions || [])
@@ -490,7 +495,7 @@ config:
     <template #[slot]="slotData" v-for="(fn, slot) in slots" :key="slot">
       <slot :name="slot" v-bind="slotData"></slot>
     </template>
-    <ModalForm v-if="config.save.url" ref="modalRef" :method="config.save?.method || 'post'" @submitted="submitted"
+    <ModalForm v-if="config.save.url || showDetail" ref="modalRef" :method="config.save?.method || 'post'" @submitted="submitted"
       :width="config.save.modalWidth || '500px'" :title="modalTitle" v-model:open="modalOpen" :model="post"
       :api-url="config.save.url" :data-resolver="config.save.dataResolver" :label-col="config.save.labelCol"
       :wrapper-col="config.save.wrapperCol">

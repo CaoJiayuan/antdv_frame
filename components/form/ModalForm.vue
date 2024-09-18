@@ -10,14 +10,13 @@ import { waitingFor } from '../../utils/functions'
 
 const request = getRequest()
 const uuid = ref(md5(new Date().toString()))
-const emit = defineEmits(['update:open', 'submitted'])
+const emit = defineEmits(['update:open', 'update:model', 'submitted'])
 
 const props = defineProps({
   open: Boolean,
   title: String,
   apiUrl: {
-    type: String,
-    required: true
+    type: String
   },
   model: Object,
   labelCol: {
@@ -70,8 +69,12 @@ const formState = computed(() => {
 
 const formRef = ref()
 const loading = ref(false)
+const initModel = ref(props.model)
 
 const onSubmit = () => {
+  if (!props.apiUrl) {
+    return 
+  }
   loading.value = true
   formRef.value
     .validate()
@@ -101,7 +104,10 @@ const okBtnProps = computed(() => {
 })
 
 const resetForm = () => {
-  formRef.value.resetFields();
+  setTimeout(() => {
+    emit('update:model', initModel.value)
+    // formRef.value.resetFields();
+  }, 200)
 };
 
 
