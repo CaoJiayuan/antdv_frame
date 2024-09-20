@@ -120,15 +120,12 @@ const readonlyState = computed(() => props.readonly)
 const emit = defineEmits(['loaded', 'update:modelValue', 'resetFilter'])
 const filters = ref(Object.assign({}, useAsFunction(props.initFilters)()))
 const filterFormRef = ref()
-const columnsState = computed(() => props.columns.map(col => {
-  col.show = !col.hidden
-  return col
-}))
+const columnsState = computed(() => props.columns)
 
-const showState = ref(columnsState.value.map(col => col.show))
+const showState = ref(columnsState.value.map(col => !col.hidden))
 
 watch(() => columnsState.value, now => {
-  showState.value = now.map(col => col.show)
+  showState.value = now.map(col => !col.hidden)
 })
 
 const sortState = ref(Object.assign({}, useAsFunction(props.sort)()))
@@ -172,6 +169,14 @@ const { loading, meta, data: pageData, paginate, withoutPage, latency } = usePag
 
 const tableDataValue = ref([])
 
+const dataSource = computed(() => {
+  if (staticData.value) {
+    return tableDataValue.value
+  }
+
+  return pageData.value
+})
+
 
 function loadStaticData() {
   Promise.resolve(props.tableData).then(resp => {
@@ -183,15 +188,6 @@ watch(() => props.tableData, now => {
   if (now) {
     loadStaticData()
   }
-})
-
-
-const dataSource = computed(() => {
-  if (staticData.value) {
-    return tableDataValue.value
-  }
-
-  return pageData.value
 })
 
 const refresh = (data = {}) => {
@@ -314,7 +310,7 @@ const formatButtons = computed(() => {
 
 const formatColumns = computed(() => {
   const actions = props.actions || []
-  const columns = columnsState.value.filter((col, index) => {
+  const columns = _.clone(columnsState.value).filter((col, index) => {
     return showState.value[index]
   })
   if (actions.length > 0 && !props.readonly) {
@@ -336,7 +332,9 @@ const formatColumns = computed(() => {
     })
   }
 
-  return columns.map(column => {
+  return columns.map(col => {
+    const column = _.clone(col)
+
     const render = column.customRender
     if (render) {
       column.customRender = (data) => {

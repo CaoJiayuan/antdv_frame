@@ -72,13 +72,15 @@ const loading = ref(false)
 const initModel = ref(props.model)
 
 const onSubmit = () => {
-  if (!props.apiUrl) {
-    return 
-  }
   loading.value = true
   formRef.value
     .validate()
     .then(() => {
+      if (!props.apiUrl) {
+        loading.value = false
+        emit('submitted', formState)
+        return
+      }
       return request({
         url: props.apiUrl,
         method: props.method,
@@ -123,6 +125,8 @@ function loadHeight() {
     setTimeout(() => {
       waitingFor(() => document.querySelector(`.modal-form-${uuid.value}`)).then(el => {
         height.value = el.offsetHeight
+      }).catch(() => {
+        //loadHeight()
       })
     }, 400)
   })
@@ -230,7 +234,7 @@ const modelStyle = computed(() => {
   return {
     top: `${top}px`,
     left: `${left}px`,
-    // transformOrigin: '0 0'
+    //transformOrigin: isNaN(tx) ? undefined : `${tx}px ${ty}px`
   }
 })
 

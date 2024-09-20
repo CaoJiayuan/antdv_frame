@@ -461,7 +461,13 @@ const actions = computed(() => {
 
 defineExpose({
   refresh: refreshTable,
-  resetFilters: () => tableRef.value && tableRef.value.resetFilters()
+  resetFilters: () => tableRef.value && tableRef.value.resetFilters(),
+  setPost: setter => {
+    setter && setter(post)
+  },
+  openEdit,
+  openShow,
+  openModal
 })
 // console.log(getFormComponent('input'))
 const slots = useSlots()
