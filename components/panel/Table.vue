@@ -337,7 +337,7 @@ const buttons = computed(() => {
   const defBtns = _.clone(indexDef.value.buttons || [])
   const save = config.value.save
 
-  if (save.url) {
+  if (save.url && !save.noAdd) {
     return [
       {
         title: save.addTitle || '新增',
