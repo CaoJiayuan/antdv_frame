@@ -26,7 +26,8 @@ export const defaultAdapter = {
       noEdit: indexDef.post?.noEdit,
       editDisabled: indexDef.post?.editDisabled,
       labelCol: indexDef.post?.labelCol,
-      wrapperCol: indexDef.post?.wrapperCol
+      wrapperCol: indexDef.post?.wrapperCol,
+      title: indexDef.post?.title
     }
   },
   delete(indexDef, props, state) {

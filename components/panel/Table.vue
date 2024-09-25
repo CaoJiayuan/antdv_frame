@@ -6,7 +6,7 @@ const request = getRequest()
 import { FormItem, Col, Row, message, Switch, Card } from 'ant-design-vue'
 import { PlusCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons-vue'
 import ModalForm from '../form/ModalForm.vue'
-import { computed, h, nextTick, onMounted, ref, useSlots } from 'vue'
+import { computed, h, nextTick, onMounted, ref, useAttrs, useSlots } from 'vue'
 import { fmtDatetime } from '../../utils/date.js'
 import { replaceParams } from '../../utils/functions.js'
 import { functions } from 'nerio-js-utils'
@@ -88,6 +88,16 @@ const { modalOpen, modalRef, openModal, openShow, openEdit, submitted, modelForm
 
 
   return Object.assign({}, postData, _.clone(useAsFunction(config.value.save.default)()))
+})
+
+const quilifiedModelTitle = computed(() => {
+  let title = config.value.save?.title
+
+  if (title) {
+    return useAsFunction(title)(post.value, modelFormConfig.value)
+  }
+
+  return modalTitle.value
 })
 
 const mapsCache = ref({})
@@ -392,11 +402,11 @@ const actions = computed(() => {
       action: (record) => {
         if (query.detailUrl) {
           loadDetail(record).then(data => {
-            emit('beforeShow', record)
+            emit('beforeShow', record, data)
             openShow(data)
           })
         } else {
-          emit('beforeShow', record)
+          emit('beforeShow', record, record)
           openShow(record)
         }
       },
@@ -472,6 +482,8 @@ defineExpose({
 // console.log(getFormComponent('input'))
 const slots = useSlots()
 // console.log(slots)
+
+const attrs = useAttrs()
 </script>
 
 <template>
@@ -481,7 +493,7 @@ const slots = useSlots()
   <Table v-else :action-width="indexDef.actionWidth" :init-filters="initFilters" :sort="indexDef.sort"
     :buttons="buttons" ref="tableRef" :columns="columns" :actions="actions" :search-data="config.query.data"
     :api-url="config.query.url" @loaded="onLoaded" :filter-label-col="config.query.filterLabelCol"
-    :filter-wrapper-col="config.query.filterWrapperCol">
+    :filter-wrapper-col="config.query.filterWrapperCol" v-bind="attrs">
     <div v-if="debug" class="mt-2">
       <pre>
 render time: {{ renderTime }}
@@ -501,15 +513,15 @@ config:
     <template #[slot]="slotData" v-for="(fn, slot) in slots" :key="slot">
       <slot :name="slot" v-bind="slotData"></slot>
     </template>
-    <ModalForm v-if="config.save.url || showDetail" ref="modalRef" :method="config.save?.method || 'post'" @submitted="submitted"
-      :width="config.save.modalWidth || '500px'" :title="modalTitle" v-model:open="modalOpen" :model="post"
-      :api-url="config.save.url" :data-resolver="config.save.dataResolver" :label-col="config.save.labelCol"
-      :wrapper-col="config.save.wrapperCol">
+    <ModalForm v-if="config.save.url || showDetail" ref="modalRef" :method="config.save?.method || 'post'"
+      @submitted="submitted" :width="config.save.modalWidth || '500px'" :title="quilifiedModelTitle" v-model:open="modalOpen"
+      :model="post" :api-url="config.save.url" :data-resolver="config.save.dataResolver"
+      :label-col="config.save.labelCol" :wrapper-col="config.save.wrapperCol">
       <Row :gutter="[12, 0]">
         <template v-for="col in formCols" :key="col.dataIndex">
-          <Col v-bind="col.formCol || { span: 24 }">
+          <Col v-bind="col.formCol || { span: 24 }" v-if="col.formIf(post, modelFormConfig)">
           <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"
-            :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" v-if="col.formIf(post, modelFormConfig)"
+            :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" 
             :wrapperCol="col.formWrapperCol || undefined" :label-col="col.formLabelCol || undefined">
             <template v-if="col.formSlot">
               <slot :name="col.formSlot" :post="post" :column="col" :detail="modelFormConfig.detail"></slot>
@@ -524,23 +536,24 @@ config:
     </ModalForm>
 
     <template #filters="{ filters }" v-if="filterCols.length > 0">
-      <Col :span="indexDef.filterNoCol ? undefined : col.filterSpan || 6" v-for="col in filterCols"
-        :key="col.filterName" v-bind="col.filterCol">
-      <FormItem :label="col.filterTitle || col.title" :disabled="disabledFilters.indexOf(col.filterName) > -1"
-        v-bind="col.filterFormProps || indexDef.filterFormProps" :label-col="col.filterLabelCol"
-        :wrapper-col="col.filterWrapperCol">
-        <template v-if="col.filterSlot">
-          <slot :name="col.filterSlot" :filters="filters" :field="col.filterName" :column="col"></slot>
-        </template>
-        <component v-else-if="col.filterRender"
-          :is="col.filterRender(filters, col, mapArray, disabledFilters.indexOf(col.filterName) > -1)"></component>
-        <component v-else-if="hasFilterComponent(col.filter)"
-          :is="renderFilterComponent(col.filter, filters, col.filterName, useAsFunction(col.filterProps)(col))">
-        </component>
-      </FormItem>
-      </Col>
+      <template v-for="col in filterCols">
+        <Col :span="indexDef.filterNoCol ? undefined : col.filterSpan || 6" :key="col.filterName" v-bind="col.filterCol"
+          v-if="col.filterIf(filters, props)">
+        <FormItem :label="col.filterTitle || col.title" :disabled="disabledFilters.indexOf(col.filterName) > -1"
+          v-bind="col.filterFormProps || indexDef.filterFormProps" :label-col="col.filterLabelCol"
+          :wrapper-col="col.filterWrapperCol">
+          <template v-if="col.filterSlot">
+            <slot :name="col.filterSlot" :filters="filters" :field="col.filterName" :column="col"></slot>
+          </template>
+          <component v-else-if="col.filterRender"
+            :is="col.filterRender(filters, col, mapArray, disabledFilters.indexOf(col.filterName) > -1)"></component>
+          <component v-else-if="hasFilterComponent(col.filter)"
+            :is="renderFilterComponent(col.filter, filters, col.filterName, useAsFunction(col.filterProps)(col))">
+          </component>
+        </FormItem>
+        </Col>
+      </template>
     </template>
-
   </Table>
 </template>
 

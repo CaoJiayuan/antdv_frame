@@ -234,7 +234,7 @@ const pagination = computed(() => {
     defaultPageSize: props.pageSize,
     position: ['bottomRight'],
     pageSizeOptions: ['5', '10', '15', '20', '30', '50', '100'],
-    showTotal: total => `${total} 条数据（查询时间：${latency.value}ms）`,
+    showTotal: total => `共 ${total} 条记录（查询时间：${latency.value}ms）`,
     showSizeChanger: true
   }
 })
@@ -564,7 +564,16 @@ onMounted(() => {
     }
   }
   :deep(.ant-pagination) {
-    padding-right: 8px;
+    padding: 12px 8px;
+    margin: 0;
+    border-radius: 0 0 12px 12px;
+    border: 1px solid #f0f0f0;
+    border-top: none;
+  }
+}
+.table-card {
+  :deep(table) {
+    border-radius:  12px;
   }
 }
 </style>
