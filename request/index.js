@@ -5,6 +5,7 @@ import { defineStore } from 'pinia'
 export const useRequestStore = defineStore('request', () => {
   const request = ref(null)
   const uploadDriver = ref('server')
+  const extendFileTypeIcons = ref([])
 
   function setRequest(req) {
     request.value = req
@@ -18,12 +19,18 @@ export const useRequestStore = defineStore('request', () => {
     uploadDriver.value = driver
   }
 
+  function withFileTypeIcons(...icons) {
+    extendFileTypeIcons.value.push(...icons)
+  }
+
   return {
     request,
     uploadDriver,
     setRequest,
     getRequest,
-    withUploadDriver
+    withUploadDriver,
+    extendFileTypeIcons,
+    withFileTypeIcons
   }
 })
 

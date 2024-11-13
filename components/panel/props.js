@@ -13,7 +13,8 @@ export const defaultAdapter = {
       },
       filterLabelCol: indexDef.filterLabelCol,
       filterWrapperCol: indexDef.filterWrapperCol,
-      noDetail: indexDef.noDetail
+      noDetail: indexDef.noDetail,
+      showDetail: indexDef.showDetail,
     }
   },
   save(indexDef, props, state) {
@@ -27,7 +28,8 @@ export const defaultAdapter = {
       editDisabled: indexDef.post?.editDisabled,
       labelCol: indexDef.post?.labelCol,
       wrapperCol: indexDef.post?.wrapperCol,
-      title: indexDef.post?.title
+      title: indexDef.post?.title,
+      showEdit: indexDef.post?.showEdit,
     }
   },
   delete(indexDef, props, state) {
@@ -36,7 +38,8 @@ export const defaultAdapter = {
       method: indexDef.delete?.method || 'delete',
       dataResolver: data => ({}),
       confirm: indexDef.delete?.confirm,
-      disabled: indexDef.delete?.disabled
+      disabled: indexDef.delete?.disabled,
+      show: indexDef.delete?.show
     }
   },
   toggle(indexDef, props, state) {

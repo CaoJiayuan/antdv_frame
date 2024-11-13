@@ -1,6 +1,7 @@
 import { useRequestStore } from '.'
 import { upload, UploadFile } from '../nerio-uploader'
 import { ref } from 'vue'
+import { message } from 'ant-design-vue'
 
 const knownFileTypes = [
   'aep',
@@ -47,6 +48,7 @@ const knownFileTypes = [
   'zip-1',
   'zip',
   'ppt',
+  'mov',
   'pptx'
 ]
 const fileIconsDir = '/images/filetypes/'
@@ -55,10 +57,13 @@ const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp']
 export function useUploader(url) {
 
   const uploads = ref([])
+  const { uploadDriver, extendFileTypeIcons } = useRequestStore()
+
+  const typeIcons = knownFileTypes.concat(extendFileTypeIcons)
 
   function getIconByExtention(extension) {
     let icon;
-    if (knownFileTypes.indexOf(extension) > -1) {
+    if (typeIcons.indexOf(extension) > -1) {
       icon = fileIconsDir + extension + '.svg';
     } else {
       icon = fileIconsDir + 'file.svg';
@@ -77,7 +82,6 @@ export function useUploader(url) {
   }
 
 
-  const { uploadDriver } = useRequestStore()
 
   function uploadFile(f, options = {}, fileHolder = null) {
     
@@ -131,6 +135,7 @@ export function useUploader(url) {
       currentFile.value.error = true;
       currentFile.value.errorMsg = error.message;
       currentFile.value.uploading = false;
+      message.error(error.message)
       return currentFile.value
     });
   }

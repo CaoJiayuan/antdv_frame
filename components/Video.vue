@@ -2,7 +2,7 @@
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css'
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 // declare a ref to hold the element reference
 // the name must match template ref value
 const videoEl = ref(null)
@@ -17,7 +17,9 @@ const props = defineProps({
   mandatory: Boolean,
 })
 const emit = defineEmits(['loadeddata', 'end'])
-const currentSrc = ref(props.src)
+const currentSrc = computed(() => {
+  return props.src
+})
 /**
  * Manually setup video.js player
  */

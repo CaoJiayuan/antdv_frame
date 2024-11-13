@@ -322,7 +322,8 @@ const formatColumns = computed(() => {
           size: "small",
           type: 'link'
         }, action, {
-          disabled: (record) => action.disabled ? action.disabled(record) : false
+          disabled: (record) => action.disabled ? action.disabled(record) : false,
+          show: (record) => action.show ? useAsFunction(action.show)(record) : true
         })
       }),
       fixed: 'right',
@@ -436,20 +437,23 @@ onMounted(() => {
 
 <template>
   <div>
-    <Card v-if="slots.filters && dettached" style="margin-bottom: 12px;" class="filter-card" :bordered="bordered" size="small">
-      <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters" :label-col="filterLabelCol" :wrapper-col="filterWrapperCol">
+    <Card v-if="slots.filters && dettached" style="margin-bottom: 12px;" class="filter-card" :bordered="bordered"
+      size="small">
+      <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters" :label-col="filterLabelCol"
+        :wrapper-col="filterWrapperCol">
         <template #filters="{ filters }">
           <slot name="filters" :filters="filters"></slot>
         </template>
       </Filters>
     </Card>
-    <Card :title="title" :bordered="bordered" class="table-card" :class="{dense: dense}" size="small">
+    <Card :title="title" :bordered="bordered" class="table-card" :class="{ dense: dense }" size="small">
 
       <template #extra>
         <slot name="extra"></slot>
       </template>
       <template v-if="slots.filters && !dettached">
-        <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters" :label-col="filterLabelCol" :wrapper-col="filterWrapperCol">
+        <Filters v-model="filters" @reset="resetFilters" @apply="applyFilters" :label-col="filterLabelCol"
+          :wrapper-col="filterWrapperCol">
           <template #filters="{ filters }">
             <slot name="filters" :filters="filters"></slot>
           </template>
@@ -496,14 +500,18 @@ onMounted(() => {
         <template #bodyCell="{ column, record }">
           <template v-if="column && column.key === 'action'">
             <template :key="idx" v-for="(action, idx) in column.actions">
-              <Popconfirm v-if="action.confirm && !action.disabled(record)" @confirm="action.onClick(record)"
-                :title="action.confirm(record)">
-                <Button class="table-action-btn" :type="action.type" :icon="action.icon" :size="action.size"
-                  :danger="action.danger" :disabled="action.disabled(record)">{{ action.title }}</Button>
-              </Popconfirm>
-              <Button class="table-action-btn" v-else :type="action.type" @click="action.onClick(record)"
-                :icon="action.icon" :size="action.size" :danger="action.danger" :disabled="action.disabled(record)">{{
-      action.title }}</Button>
+              <template v-if="action.show(record)">
+                <Popconfirm v-if="action.confirm && !action.disabled(record)" @confirm="action.onClick(record)"
+                  :title="action.confirm(record)">
+                  <Button class="table-action-btn" :type="action.type" :icon="action.icon" :size="action.size"
+                    :danger="action.danger" :disabled="action.disabled(record)" :loading="action.loading">{{
+                    action.title }}</Button>
+                </Popconfirm>
+                <Button class="table-action-btn" v-else :type="action.type" @click="action.onClick(record)"
+                  :icon="action.icon" :size="action.size" :danger="action.danger" :disabled="action.disabled(record)"
+                  :loading="action.loading">{{
+                    action.title }}</Button>
+              </template>
             </template>
           </template>
           <template v-for="col in formatColumns">
@@ -554,15 +562,19 @@ onMounted(() => {
 .table-action-btn.ant-btn-sm {
   font-size: 13px;
 }
-.filter-card,.table-card {
+
+.filter-card,
+.table-card {
   :deep(.ant-card-body) {
     padding: 8px;
   }
+
   &.dense {
     :deep(.ant-card-body) {
       padding: 0;
     }
   }
+
   :deep(.ant-pagination) {
     padding: 12px 8px;
     margin: 0;
@@ -571,9 +583,10 @@ onMounted(() => {
     border-top: none;
   }
 }
+
 .table-card {
   :deep(table) {
-    border-radius:  12px;
+    border-radius: 12px;
   }
 }
 </style>

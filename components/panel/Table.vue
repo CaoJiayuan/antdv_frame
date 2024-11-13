@@ -304,12 +304,17 @@ const formCols = computed(() => {
     const formFn = useAsFunction(item.formProps)
 
     item.formProps = (col) => {
-      const res = Object.assign({
-        detail: modelFormConfig.value?.detail
-      }, formFn(col) || {}, {
+      const append = {
         col: col,
-        dataSource: mapArray.value[col.mapIndex]
-      })
+        dataSource: mapArray.value[col.mapIndex],
+      }
+      
+      const detail = modelFormConfig.value?.detail
+      if (detail != undefined) {
+        append.detail = detail
+      }
+
+      const res = Object.assign({}, formFn(col) || {}, append)
 
       return res
     }
@@ -411,7 +416,8 @@ const actions = computed(() => {
         }
       },
       icon: h(EyeOutlined),
-      disabled: record => query.detailDisabled ? useAsFunction(save.detailDisabled)(record) : false
+      disabled: record => query.detailDisabled ? useAsFunction(save.detailDisabled)(record) : false,
+      show: record => query.showDetail ? useAsFunction(query.showDetail)(record) : true
     })
   }
 
@@ -436,7 +442,8 @@ const actions = computed(() => {
         }
       },
       icon: h(EditOutlined),
-      disabled: record => save.editDisabled ? useAsFunction(save.editDisabled)(record) : false
+      disabled: record => save.editDisabled ? useAsFunction(save.editDisabled)(record) : false,
+      show: record => save.showEdit ? useAsFunction(save.showEdit)(record) : true
     })
   }
 
@@ -461,7 +468,8 @@ const actions = computed(() => {
       danger: true,
       icon: h(DeleteOutlined),
       confirm: record => confirm ? useAsFunction(confirm)(record) : `确定删除 ${record}`,
-      disabled: record => del.disabled ? useAsFunction(del.disabled)(record) : false
+      disabled: record => del.disabled ? useAsFunction(del.disabled)(record) : false,
+      show: record => del.show ? useAsFunction(del.show)(record) : true
     })
   }
 

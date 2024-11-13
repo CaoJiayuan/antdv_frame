@@ -15,7 +15,7 @@ const widthMap = {
   xxl: 256
 }
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'uploaded', 'selected'])
 
 const props = defineProps({
   size: String,
@@ -124,7 +124,9 @@ function getUploadValidator() {
 }
 
 function upload(e) {
-  uploadFile(e.target.files[0], {
+  const file = e.target.files[0]
+  emit('selected', file)
+  uploadFile(file, {
     validate: getUploadValidator()
   }).then((currentFile) => {
     const idx = uploads.value.indexOf(currentFile)
@@ -132,6 +134,8 @@ function upload(e) {
       uploads.value.splice(idx, 1)
       return
     }
+
+    emit('uploaded', currentFile)
 
     //const fileRes = props.dataResolver(data)
     if (idx > -1) {
@@ -269,6 +273,7 @@ function previewFile(file) {
       <Progress type="circle" :size="s - 6" :percent="file.progress" v-if="file.uploading" />
 
       <a @click="removeFile(index)" v-if="!readonly && !file.uploading" class="upload-remove">移除</a>
+      <span v-if="file.error">{{ file.error }}</span>
     </div>
     <div class="upload-btn"
       v-if="!readonly && previewFiles.length < maxFiles && (!isSingle || previewFiles.length == 0)">
