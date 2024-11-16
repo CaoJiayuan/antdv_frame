@@ -298,7 +298,9 @@ const formCols = computed(() => {
   return propsState.value.filter(item => item.form || item.formSlot).map(itemProp => {
     const item = _.clone(itemProp)
     item.formIf = item.formIf || (() => true)
-    item.formName = item.formName || item.dataIndex
+    const fname = item.formName || item.dataIndex
+    item.formName = fname.split('.')
+
     item.mapIndex = item.mapIndex || item.dataIndex
 
     const formFn = useAsFunction(item.formProps)

@@ -335,7 +335,9 @@ const formatColumns = computed(() => {
 
   return columns.map(col => {
     const column = _.clone(col)
-
+    if (column.dataIndex && column.dataIndex.indexOf('.') > -1) {
+      column.dataIndex = column.dataIndex.split('.')
+    }
     const render = column.customRender
     if (render) {
       column.customRender = (data) => {

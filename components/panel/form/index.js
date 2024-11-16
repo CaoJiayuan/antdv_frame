@@ -15,10 +15,19 @@ export function withDefaults() {
   Object.keys(coms).forEach(key => {
     const name = key.replace(/^\.\//, '').replace(/\.vue$/, '').replace('components/', '')
     ps.registerFormComponent(name, (post, field, props) => {
+      var modelValue
+      if (Array.isArray(field)) {
+        modelValue = _.get(post, field)
+      } else {
+        modelValue = post[field]
+      }
+
       // console.log(props)
       return h(coms[key].default, Object.assign({}, props, {
-        modelValue: post[field],
-        'onUpdate:modelValue': v => post[field] = v,
+        modelValue,
+        'onUpdate:modelValue': v => {
+          _.set(post, field, v)
+        },
       }))
     })
   })
@@ -42,7 +51,8 @@ export function renderFilterComponent(key, post, field, props) {
 
   const fn = ps.getFilterComponent(key)
   if (props.op) {
-    field = `${field},${props.op}`
+    const strField = Array.isArray(field) ? field.join('.') : field
+    field = `${strField},${props.op}`
   }
 
   if (fn) {
