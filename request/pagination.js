@@ -1,7 +1,7 @@
 import { computed, ref } from "vue"
 import { getRequest } from "."
 
-export function usePagination(emit) {
+export function usePagination(emit, method = 'post') {
   const loading = ref(false)
   const loaded = ref(false)
   const finished = ref(false)
@@ -25,7 +25,7 @@ export function usePagination(emit) {
     cacheFilters.value = filters
     const reqData = {
       url: apiUrl,
-      method: "post",
+      method,
       data: Object.assign({}, extra, {
         per_page: perPage, page, sort, filters, search
       })
@@ -33,8 +33,8 @@ export function usePagination(emit) {
 
     return request(reqData).then((res) => {
       latency.value = new Date().getTime() - start
-   
-      const items = res.data.data
+      const isList = Array.isArray(res.data) 
+      const items =isList ? res.data : res.data.data
 
       for (let i in items) {
         items[i].key = parseInt((page - 1) * perPage) + parseInt(i)
@@ -50,8 +50,14 @@ export function usePagination(emit) {
       if (res.data.meta) {
         meta.value = res.data.meta
       }
-      withoutPage.value = res.data.meta == undefined
-      finished.value = meta.value.last_page == meta.value.page || meta.value.last_page == 0;
+      if (isList) {
+        withoutPage.value = true
+        finished.value = true
+      } else {
+        withoutPage.value = res.data.meta == undefined
+        finished.value = meta.value.last_page == meta.value.page || meta.value.last_page == 0;
+      }
+   
       emit('loaded', res, reqData)
       return res
     }).catch(() => {

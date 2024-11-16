@@ -165,7 +165,7 @@ function cacheTableData(data) {
 }
 
 
-const { loading, meta, data: pageData, paginate, withoutPage, latency } = usePagination(emit)
+const { loading, meta, data: pageData, paginate, withoutPage, latency } = usePagination(emit, props.requestMethod)
 
 const tableDataValue = ref([])
 

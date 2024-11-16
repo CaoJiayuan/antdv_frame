@@ -529,7 +529,7 @@ config:
       :label-col="config.save.labelCol" :wrapper-col="config.save.wrapperCol">
       <Row :gutter="[12, 0]">
         <template v-for="col in formCols" :key="col.dataIndex">
-          <Col v-bind="col.formCol || { span: 24 }" v-if="col.formIf(post, modelFormConfig)">
+          <Col v-bind="col.formCol || config.save.col ||  { span: 24 }" v-if="col.formIf(post, modelFormConfig)">
           <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"
             :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" 
             :wrapperCol="col.formWrapperCol || undefined" :label-col="col.formLabelCol || undefined">
