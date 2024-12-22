@@ -79,7 +79,7 @@ const slots = useSlots()
 </script>
 <template>
   <Select v-model:value="value">
-    <SelectOption v-for="item in data" :key="item.value" :value="item.value">
+    <SelectOption v-for="item in data" :key="item.value" :value="item.value" :text="item.text">
       <template v-if="!slots['item-text']">
         {{ item.text }}
       </template>

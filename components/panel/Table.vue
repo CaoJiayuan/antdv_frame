@@ -179,7 +179,11 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow', 'beforeSave'])
+const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow', 'beforeSave', 'mutated'])
+
+const mutateCallback = (key, value, post) => {
+  emit('mutated', key, value, post)
+}
 
 function onLoaded(res, req) {
   emit('loaded', res, req)
@@ -534,10 +538,10 @@ config:
             :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" 
             :wrapperCol="col.formWrapperCol || undefined" :label-col="col.formLabelCol || undefined">
             <template v-if="col.formSlot">
-              <slot :name="col.formSlot" :post="post" :column="col" :detail="modelFormConfig.detail"></slot>
+              <slot :name="col.formSlot" :post="post" :column="col" :detail="modelFormConfig.detail" :mutate="mutateCallback"></slot>
             </template>
             <component v-else-if="hasFormComponent(col.form)"
-              :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col))">
+              :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col), mutateCallback)">
             </component>
           </FormItem>
           </Col>

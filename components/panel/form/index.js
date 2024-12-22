@@ -14,7 +14,7 @@ export function withDefaults() {
 
   Object.keys(coms).forEach(key => {
     const name = key.replace(/^\.\//, '').replace(/\.vue$/, '').replace('components/', '')
-    ps.registerFormComponent(name, (post, field, props) => {
+    ps.registerFormComponent(name, (post, field, props, mutate) => {
       var modelValue
       if (Array.isArray(field)) {
         modelValue = _.get(post, field)
@@ -27,19 +27,20 @@ export function withDefaults() {
         modelValue,
         'onUpdate:modelValue': v => {
           _.set(post, field, v)
+          mutate(field, v, post)
         },
       }))
     })
   })
 }
 
-export function renderFormComponent(key, post, field, props) {
+export function renderFormComponent(key, post, field, props, mutate) {
 
   const ps = usePanelStore()
 
   const fn = ps.getFormComponent(key)
   if (fn) {
-    return fn(post, field, props)
+    return fn(post, field, props, mutate)
   }
 
   return h('span', {}, '未注册组件：' + key)

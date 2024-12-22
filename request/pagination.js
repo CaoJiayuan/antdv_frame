@@ -54,8 +54,8 @@ export function usePagination(emit, method = 'post') {
         withoutPage.value = true
         finished.value = true
       } else {
-        withoutPage.value = res.data.meta == undefined
-        finished.value = meta.value.last_page == meta.value.page || meta.value.last_page == 0;
+        withoutPage.value = res.data.meta == undefined || res.data.meta.pageless
+        finished.value = meta.value.last_page == meta.value.page || meta.value.last_page == 0 || res.data.meta.pageless;
       }
    
       emit('loaded', res, reqData)
