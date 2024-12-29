@@ -241,29 +241,46 @@ const pagination = computed(() => {
 
 const rowSelection = computed(() => {
   if (props.modelValue != undefined) {
+    const value = _.clone(props.modelValue)
     const isArr = Array.isArray(props.modelValue)
     const srowKeys = []
-    const srows = isArr ? props.modelValue : [props.modelValue]
-    const pv = pagination.value
+    const srows = isArr ? value : [value]
     for (let i in srows) {
-      let idx = dataSource.value.findIndex(row => row[props.pk] == srows[i][props.pk])
-      if (idx != -1) {
-        if (withoutPage.value) {
-          srowKeys.push(idx)
-        } else {
-          srowKeys.push(idx + (pv.current - 1) * pv.pageSize)
-        }
-      }
+      srowKeys.push(srows[i][props.pk])
     }
-
     return {
       type: isArr ? 'checkbox' : 'radio',
       selectedRowKeys: srowKeys,
-      onChange: (selectedRowKeys, selectedRows) => {
-        if (isArr) {
-          emit('update:modelValue', selectedRows)
+      onSelect: (record, selected) => {
+        if (selected) {
+          if (isArr) {
+            value.push(record)
+            emit('update:modelValue', value)
+          } else {
+            emit('update:modelValue', record)
+          }
         } else {
-          emit('update:modelValue', selectedRows[0])
+          if (isArr) {
+            value.splice(value.findIndex(item => item[props.pk] == record[props.pk]), 1)
+            emit('update:modelValue', value)
+          } else {
+            emit('update:modelValue', null)
+          }
+        }
+      },
+      onSelectAll(selected, selectedRows, changeRows) {
+        if (selected) {
+          if (isArr) {
+            emit('update:modelValue', value.concat(changeRows))
+          } else {
+            emit('update:modelValue', changeRows[0])
+          }
+        } else {
+          if (isArr) {
+            emit('update:modelValue', value.filter(item => !changeRows.find(row => row[props.pk] == item[props.pk])))
+          } else {
+            emit('update:modelValue', null)
+          }
         }
       }
     }
@@ -497,7 +514,7 @@ onMounted(() => {
 
       <Table @change="handleTableChange" :expand-column-width="100" :columns="formatColumns" :data-source="dataSource"
         :loading="loading" :pagination="pagination" :row-selection="rowSelection" :scroll="scroll" v-bind="attrs"
-        bordered :size="size">
+        bordered :size="size" :rowKey="pk">
 
         <template #bodyCell="{ column, record }">
           <template v-if="column && column.key === 'action'">
