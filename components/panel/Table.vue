@@ -180,6 +180,7 @@ onMounted(() => {
 })
 
 const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow', 'beforeSave', 'mutated'])
+const attrs = useAttrs()
 
 const mutateCallback = (key, value, post) => {
   emit('mutated', key, value, post)
@@ -314,7 +315,7 @@ const formCols = computed(() => {
         col: col,
         dataSource: mapArray.value[col.mapIndex],
       }
-      
+
       const detail = modelFormConfig.value?.detail
       if (detail != undefined) {
         append.detail = detail
@@ -363,12 +364,15 @@ const buttons = computed(() => {
       {
         title: save.addTitle || '新增',
         action: () => {
+          if (attrs.onAdd) {
+            attrs.onAdd(post.value)
+          } else {
+            openModal()
 
-          openModal()
-
-          nextTick(() => {
-            emit('beforeSave', {}, post.value)
-          })
+            nextTick(() => {
+              emit('beforeSave', {}, post.value)
+            })
+          }
         },
         icon: h(PlusCircleOutlined),
         disabled: () => save.disabled
@@ -411,12 +415,23 @@ const actions = computed(() => {
     extra.push({
       title: query.detailTitle || '详情',
       action: (record) => {
+
+
         if (query.detailUrl) {
           loadDetail(record).then(data => {
+            if (attrs.onDetail) {
+              attrs.onDetail(data)
+              return
+            }
             emit('beforeShow', record, data)
             openShow(data)
+
           })
         } else {
+          if (attrs.onDetail) {
+            attrs.onDetail(record)
+            return
+          }
           emit('beforeShow', record, record)
           openShow(record)
         }
@@ -433,6 +448,10 @@ const actions = computed(() => {
       action: (record) => {
         if (query.detailUrl) {
           loadDetail(record).then(data => {
+            if (attrs.onEdit) {
+              attrs.onEdit(data)
+              return
+            }
             emit('beforeEdit', data)
             openEdit(data)
             nextTick(() => {
@@ -440,6 +459,10 @@ const actions = computed(() => {
             })
           })
         } else {
+          if (attrs.onEdit) {
+            attrs.onEdit(record)
+            return
+          }
           emit('beforeEdit', record)
           openEdit(record)
           nextTick(() => {
@@ -497,7 +520,6 @@ defineExpose({
 const slots = useSlots()
 // console.log(slots)
 
-const attrs = useAttrs()
 </script>
 
 <template>
@@ -528,17 +550,18 @@ config:
       <slot :name="slot" v-bind="slotData"></slot>
     </template>
     <ModalForm v-if="config.save.url || showDetail" ref="modalRef" :method="config.save?.method || 'post'"
-      @submitted="submitted" :width="config.save.modalWidth || '500px'" :title="quilifiedModelTitle" v-model:open="modalOpen"
-      :model="post" :api-url="config.save.url" :data-resolver="config.save.dataResolver"
+      @submitted="submitted" :width="config.save.modalWidth || '500px'" :title="quilifiedModelTitle"
+      v-model:open="modalOpen" :model="post" :api-url="config.save.url" :data-resolver="config.save.dataResolver"
       :label-col="config.save.labelCol" :wrapper-col="config.save.wrapperCol">
       <Row :gutter="[12, 0]">
         <template v-for="col in formCols" :key="col.dataIndex">
-          <Col v-bind="col.formCol || config.save.col ||  { span: 24 }" v-if="col.formIf(post, modelFormConfig)">
+          <Col v-bind="col.formCol || config.save.col || { span: 24 }" v-if="col.formIf(post, modelFormConfig)">
           <FormItem :name="col.formName" :label="col.hideFormTitle ? undefined : col.formTitle || col.title"
-            :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" 
-            :wrapperCol="col.formWrapperCol || undefined" :label-col="col.formLabelCol || undefined">
+            :rules="col.rules" :help="useAsFunction(col.formHelp)(post)" :wrapperCol="col.formWrapperCol || undefined"
+            :label-col="col.formLabelCol || undefined">
             <template v-if="col.formSlot">
-              <slot :name="col.formSlot" :post="post" :column="col" :detail="modelFormConfig.detail" :mutate="mutateCallback"></slot>
+              <slot :name="col.formSlot" :post="post" :column="col" :detail="modelFormConfig.detail"
+                :mutate="mutateCallback"></slot>
             </template>
             <component v-else-if="hasFormComponent(col.form)"
               :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col), mutateCallback)">
