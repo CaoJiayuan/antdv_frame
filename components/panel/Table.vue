@@ -179,11 +179,16 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow', 'beforeSave', 'mutated'])
+const emit = defineEmits(['loaded', 'toggle', 'beforeEdit', 'beforeDelete', 'beforeShow', 'beforeSave', 'mutated', 'submitted'])
 const attrs = useAttrs()
 
 const mutateCallback = (key, value, post) => {
   emit('mutated', key, value, post)
+}
+
+const formSubmitted = (post) => {
+  submitted()
+  emit('submitted', post)
 }
 
 function onLoaded(res, req) {
@@ -550,7 +555,7 @@ config:
       <slot :name="slot" v-bind="slotData"></slot>
     </template>
     <ModalForm v-if="config.save.url || showDetail" ref="modalRef" :method="config.save?.method || 'post'"
-      @submitted="submitted" :width="config.save.modalWidth || '500px'" :title="quilifiedModelTitle"
+      @submitted="formSubmitted" :width="config.save.modalWidth || '500px'" :title="quilifiedModelTitle"
       v-model:open="modalOpen" :model="post" :api-url="config.save.url" :data-resolver="config.save.dataResolver"
       :label-col="config.save.labelCol" :wrapper-col="config.save.wrapperCol">
       <Row :gutter="[12, 0]">

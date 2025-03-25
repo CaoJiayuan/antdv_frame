@@ -83,7 +83,8 @@ const props = defineProps({
     type: Number
   },
   noCache: {
-    type: Boolean
+    type: Boolean,
+    default: () => true
   },
   cacheKey: {
     type: String
