@@ -1,5 +1,5 @@
 <script setup>
-import { Table, Card, Button, Popconfirm, Divider, Form, Popover, Checkbox, Switch } from 'ant-design-vue'
+import { Table, Card, Button, Popconfirm, Divider, Form, Popover, Checkbox, Switch, Modal } from 'ant-design-vue'
 import { usePagination } from '../../request/pagination.js'
 import { computed, ref, h, useSlots, watch, useAttrs, capitalize, onUnmounted, onMounted } from 'vue'
 import { ReloadOutlined, SettingOutlined } from '@ant-design/icons-vue';
@@ -336,7 +336,21 @@ const formatColumns = computed(() => {
       key: 'action',
       actions: actions.map(action => {
         return Object.assign({
-          onClick: (record) => callAction(action.action, record, refresh),
+          onClick: (item) => {
+            const record = _.clone(item)
+            if (action.confirm) {
+              Modal.confirm({
+                title: action.title,
+                content: action.confirm(record),
+                onOk: () => {
+                  callAction(action.action, record, refresh)
+                }
+              })
+            } else {
+              callAction(action.action, record, refresh)
+            }
+            // callAction(action.action, record, refresh)
+          },
           size: "small",
           type: 'link'
         }, action, {
@@ -521,13 +535,13 @@ onMounted(() => {
           <template v-if="column && column.key === 'action'">
             <template :key="idx" v-for="(action, idx) in column.actions">
               <template v-if="action.show(record)">
-                <Popconfirm v-if="action.confirm && !action.disabled(record)" @confirm="action.onClick(record)"
+                <!-- <Popconfirm v-if="action.confirm && !action.disabled(record)" @confirm="action.onClick(record)"
                   :title="action.confirm(record)">
                   <Button class="table-action-btn" :type="action.type" :icon="action.icon" :size="action.size"
                     :danger="action.danger" :disabled="action.disabled(record)" :loading="action.loading">{{
-                    action.title }}</Button>
-                </Popconfirm>
-                <Button class="table-action-btn" v-else :type="action.type" @click="action.onClick(record)"
+                      action.title }}</Button>
+                </Popconfirm> -->
+                <Button class="table-action-btn" :type="action.type" @click="action.onClick(record)"
                   :icon="action.icon" :size="action.size" :danger="action.danger" :disabled="action.disabled(record)"
                   :loading="action.loading">{{
                     action.title }}</Button>
