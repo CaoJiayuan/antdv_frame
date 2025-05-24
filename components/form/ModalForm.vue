@@ -191,7 +191,12 @@ const openModal = (config) => {
   }
 }
 
-defineExpose({ openModal })
+defineExpose({
+  openModal,
+  getForm: cb => {
+    cb && cb(formRef.value)
+  }
+})
 
 const modelStyle = computed(() => {
   if (handle.value == null) {

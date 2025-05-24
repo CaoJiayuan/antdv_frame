@@ -315,7 +315,7 @@ const formCols = computed(() => {
 
     const formFn = useAsFunction(item.formProps)
 
-    item.formProps = (col) => {
+    item.formProps = (col, post) => {
       const append = {
         col: col,
         dataSource: mapArray.value[col.mapIndex],
@@ -326,7 +326,7 @@ const formCols = computed(() => {
         append.detail = detail
       }
 
-      const res = Object.assign({}, formFn(col) || {}, append)
+      const res = Object.assign({}, formFn(col, post) || {}, append)
 
       return res
     }
@@ -416,12 +416,10 @@ const actions = computed(() => {
     }).then(({ data }) => data)
   }
 
-  if (query.url && !query.noDetail) {
+  if (query.detailUrl && !query.noDetail) {
     extra.push({
       title: query.detailTitle || '详情',
       action: (record) => {
-
-
         if (query.detailUrl) {
           loadDetail(record).then(data => {
             if (attrs.onDetail) {
@@ -519,7 +517,10 @@ defineExpose({
   },
   openEdit,
   openShow,
-  openModal
+  openModal,
+  getForm: cb => {
+    modalRef.value && modalRef.value.getForm(cb)
+  }
 })
 // console.log(getFormComponent('input'))
 const slots = useSlots()
@@ -569,7 +570,7 @@ config:
                 :mutate="mutateCallback"></slot>
             </template>
             <component v-else-if="hasFormComponent(col.form)"
-              :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col), mutateCallback)">
+              :is="renderFormComponent(col.form, post, col.formName, useAsFunction(col.formProps)(col, post), mutateCallback)">
             </component>
           </FormItem>
           </Col>
