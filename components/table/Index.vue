@@ -113,6 +113,7 @@ const props = defineProps({
     type: Boolean,
   }
 })
+const route = useRoute()
 
 const staticData = computed(() => !!props.tableData)
 
@@ -122,21 +123,6 @@ const emit = defineEmits(['loaded', 'update:modelValue', 'resetFilter'])
 const filters = ref(Object.assign({}, useAsFunction(props.initFilters)()))
 const filterFormRef = ref()
 const columnsState = computed(() => props.columns)
-
-const showState = ref(columnsState.value.map(col => !col.hidden))
-
-watch(() => columnsState.value, now => {
-  showState.value = now.map(col => !col.hidden)
-})
-
-const sortState = ref(Object.assign({}, useAsFunction(props.sort)()))
-
-const autoRefreshRef = ref(props.autoRefresh)
-
-const refreshInterval = props.refreshInterval || 3000
-
-const route = useRoute()
-
 const pageKey = computed(() => {
   if (props.cacheKey) {
     return md5(route.fullPath + props.cacheKey)
@@ -145,6 +131,39 @@ const pageKey = computed(() => {
 
   return md5(route.fullPath + props.apiUrl + JSON.stringify(props.searchData))
 })
+
+const stateCache = computed(() => {
+  const state = localStorage.getItem(pageKey.value + "-columns")
+
+  if (state) {
+    try {
+      return JSON.parse(state)
+    } catch (e) {
+      return null
+    }
+  }
+
+  return null
+})
+
+function saveState() {
+  localStorage.setItem(pageKey.value + "-columns", JSON.stringify(showState.value))
+}
+
+const showState = ref(stateCache.value ? stateCache.value : columnsState.value.map(col => !col.hidden))
+
+watch(() => columnsState.value, now => {
+  showState.value = now.map(col => !col.hidden)
+})
+
+
+const sortState = ref(Object.assign({}, useAsFunction(props.sort)()))
+
+const autoRefreshRef = ref(props.autoRefresh)
+
+const refreshInterval = props.refreshInterval || 3000
+
+
 
 const DataKey = "_TABLE_DATA_CACHE_"
 
@@ -509,7 +528,7 @@ onMounted(() => {
               <template #content>
                 <div class="table-columns-setting">
                   <div v-for="(col, idx) in columnsState" :key="col.dataIndex">
-                    <Checkbox v-model:checked="showState[idx]"></Checkbox> {{ col.title }}
+                    <Checkbox v-model:checked="showState[idx]" @change="saveState"></Checkbox> {{ col.title }}
                   </div>
                 </div>
                 <div class="flex">
@@ -541,8 +560,8 @@ onMounted(() => {
                     :danger="action.danger" :disabled="action.disabled(record)" :loading="action.loading">{{
                       action.title }}</Button>
                 </Popconfirm> -->
-                <Button class="table-action-btn" :type="action.type" @click="action.onClick(record)"
-                  :icon="action.icon" :size="action.size" :danger="action.danger" :disabled="action.disabled(record)"
+                <Button class="table-action-btn" :type="action.type" @click="action.onClick(record)" :icon="action.icon"
+                  :size="action.size" :danger="action.danger" :disabled="action.disabled(record)"
                   :loading="action.loading">{{
                     action.title }}</Button>
               </template>
